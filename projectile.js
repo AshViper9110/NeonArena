@@ -1,8 +1,23 @@
+// ============================================================
+// NEON ARENA - プロジェクタイル（弾丸）
+// 弾丸の生成、更新、軌跡、衝突後の処理を管理
+// ============================================================
+
 const _sharedProjGeo = new THREE.SphereGeometry(0.3, 6, 6);
 const _sharedProjGlowGeo = new THREE.SphereGeometry(0.6, 6, 6);
 const _v3_tmp = new THREE.Vector3();
 
 class Projectile {
+  /**
+   * @param {THREE.Scene} scene - シーン
+   * @param {THREE.Vector3} origin - 発射原点
+   * @param {THREE.Vector3} dir - 発射方向（正規化済み）
+   * @param {string} ownerId - 所有者ID
+   * @param {string} id - 弾丸固有ID
+   * @param {number} color - 色
+   * @param {string} weapon - 武器ID
+   * @param {number} mapHalf - マップ半分サイズ
+   */
   constructor(scene, origin, dir, ownerId, id, color, weapon, mapHalf) {
     this.scene = scene;
     this.ownerId = ownerId;
@@ -44,9 +59,13 @@ class Projectile {
     this.homingStrength = 3;
     this._distTraveled = 0;
     this.maxDist = this.wp.range || 40;
-    this.maxAge = this.wp.projLifetime || 3;  // safety fallback
+    this.maxAge = this.wp.projLifetime || 3;
   }
 
+  /**
+   * 弾丸更新
+   * @param {number} dt - デルタタイム
+   */
   update(dt) {
     if (!this.alive) return;
     this.age += dt;

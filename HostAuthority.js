@@ -1,23 +1,71 @@
+// ============================================================
+// NEON ARENA - ホストオーソリティ
+// 弾丸生成、ヒット判定、弾薬管理、チート検証をホスト側で一元管理
+// ============================================================
+
 class HostAuthority {
   constructor(game) {
-    this.game = game;
-    this.hostProjectiles = [];
-    this.projIdCounter = 0;
-    this.ammoStates = new Map();
-    this.heatStates = new Map();
-    this.playerStats = new Map();
-    this.respawnedPeers = new Set();
-    this._gravityZones = [];
-    this._drones = new Map();
-    this._projIdCounter = 0;
+    this.game = game;                       // Gameインスタンス参照
+    this.hostProjectiles = [];              // ホスト側で管理する弾丸配列
+    this.projIdCounter = 0;                 // 弾丸IDカウンター
+    this.ammoStates = new Map();            // プレイヤー毎の弾薬状態
+    this.heatStates = new Map();            // プレイヤー毎のヒート状態
+    this.playerStats = new Map();           // プレイヤー毎の統計
+    this.respawnedPeers = new Set();        // リスポーン直後のプレイヤー
+    this._gravityZones = [];                // 重力ゾーン配列
+    this._drones = new Map();               // ドローン管理
+    this._projIdCounter = 0;                // プロジェクタイルIDカウンター
+
+    /* Fire rate tracking per player per weapon using Host time.
+       Key: peerId_weapon, Value: nextFireTime (performance.now() in ms) */
+    this.nextFireTimes = new Map();         // 連射制御用：次に撃てる時刻
   }
 
+  /**
+   * 連射制御用キー生成
+   * @param {string} peerId - プレイヤーID
+   * @param {string} weapon - 武器ID
+   * @returns {string} キー文字列
+   */
+  _getNextFireTimeKey(peerId, weapon) {
+    return peerId + '_' + weapon;
+  }
+
+  /**
+   * 連射速度検証（ホスト時間基準）
+   * @param {string} peerId - プレイヤーID
+   * @param {string} weapon - 武器ID
+   * @returns {Object} 検証結果 {ok: boolean, reason?: string}
+   */
+  _validateFireRate(peerId, weapon) {
+    const key = this._getNextFireTimeKey(peerId, weapon);
+    const now = performance.now();              // ホスト側の現在時刻
+    const nextFireTime = this.nextFireTimes.get(key) || 0;
+
+    if (now < nextFireTime) {
+      return { ok: false, reason: 'FireRate Hack' };
+    }
+
+    const wp = WEAPONS[weapon];
+    if (!wp) return { ok: false, reason: 'Invalid Weapon' };
+
+    const interval = wp.fireRate * 1000;        // 発射間隔（ミリ秒）
+    this.nextFireTimes.set(key, now + interval);
+    return { ok: true };
+  }
+
+  /**
+   * 発射リクエスト処理
+   * @param {Object} data - 発射データ
+   * @param {string} peerId - プレイヤーID
+   * @param {string} inputId - 入力ID
+   */
   handleFireRequest(data, peerId, inputId) {
     console.log('[Host Authority] handleFireRequest peerId=%s weapon=%s inputId=%s', peerId, data.weapon, inputId);
     const cv = this.game.cheatValidator;
     const cm = this.game.cheatManager;
 
-    const r = cv.validateFireRate(peerId, data.weapon, data.timestamp || Date.now());
+    const r = this._validateFireRate(peerId, data.weapon);
     if (!r.ok) { console.log('[Host Authority] BLOCKED: validateFireRate'); if (cm) cm.report(peerId, r.reason); return; }
     if (this.respawnedPeers.has(peerId)) {
       console.log('[Host Authority] respawnedPeers → refillAllAmmo');
@@ -566,7 +614,7 @@ class HostAuthority {
   handleBeamFireRequest(data, peerId, inputId) {
     const cv = this.game.cheatValidator;
     const cm = this.game.cheatManager;
-    const r = cv.validateFireRate(peerId, data.weapon, data.timestamp || 0);
+    const r = this._validateFireRate(peerId, data.weapon);
     if (!r.ok) { if (cm) cm.report(peerId, r.reason); return; }
 
     if (this.respawnedPeers.has(peerId)) {
@@ -739,5 +787,6 @@ class HostAuthority {
     this._gravityZones = [];
     this._drones.clear();
     this._projIdCounter = 0;
+    this.nextFireTimes.clear();
   }
 }

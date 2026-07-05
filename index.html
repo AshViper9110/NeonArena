@@ -1,524 +1,438 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>NEON ARENA</title>
-<link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>NEON ARENA</title>
+  <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
-<div id="game-container"></div>
+  <div id="game-container"></div>
 
-<!-- ========== タイトル画面 ========== -->
-<div id="title-screen" class="screen">
-  <div id="title-inner">
-    <h1>NEON ARENA</h1>
-    <div class="subtitle">Real-Time PvP</div>
-    <div class="title-input-group">
-      <input id="player-name-input" type="text" placeholder="Enter your name" maxlength="16" value="Player">
-    </div>
-    <div class="btn-group">
-      <button class="btn btn-primary" id="btn-host">🚀 Host</button>
-      <button class="btn btn-secondary" id="btn-join">⚡ Join</button>
-    </div>
-    <div class="btn-group" style="margin-top:8px;">
-      <button class="btn btn-training" id="btn-training">🎯 Training Range</button>
-    </div>
-    <div id="join-section" style="display:none;">
-      <input id="room-id-input" type="text" placeholder="Room ID e.g. NEON-A7X3" maxlength="12">
-      <button class="btn btn-secondary btn-small" id="btn-join-room">Join Arena</button>
-      <button class="btn btn-small" id="btn-join-cancel">Cancel</button>
-    </div>
-    <div id="host-section" style="display:none;">
-      <div id="room-id-display">NEON-XXXX</div>
-      <button class="btn btn-primary btn-small" id="btn-copy-room">📋 Copy ID</button>
-      <div class="status-text" id="host-status">Waiting for players...</div>
-    </div>
-    <div class="status-text" id="title-status">Click Host or Join to start</div>
-  </div>
-</div>
-
-<!-- ========== ロビー画面（2カラム） ========== -->
-<div id="lobby-screen" class="screen" style="display:none;">
-  <div id="lobby-inner">
-
-    <!-- ===== 左カラム: ROOM ID + SELECT ===== -->
-    <div id="lobby-left">
-
-      <!-- Room ID -->
-      <div id="lobby-room-id-section">
-        <div class="lobby-section-label">ルームID</div>
-        <div id="lobby-room-id">---</div>
-        <div id="lobby-room-role" class="lobby-room-role">Host</div>
-        <button class="btn btn-small" id="lobby-copy-room">📋 コピー</button>
-        <span id="lobby-copy-feedback" style="display:none;color:#00ff88;font-size:0.8em;margin-left:8px;">コピー完了!</span>
+  <!-- ========== タイトル画面 ========== -->
+  <div id="title-screen" class="screen">
+    <div id="title-inner">
+      <h1>NEON ARENA</h1>
+      <div class="subtitle">Real-Time PvP</div>
+      <div class="title-input-group">
+        <input id="player-name-input" type="text" placeholder="Enter your name" maxlength="16" value="Player">
       </div>
+      <div class="btn-group">
+        <button class="btn btn-primary" id="btn-host">🚀 Host</button>
+        <button class="btn btn-secondary" id="btn-join">⚡ Join</button>
+      </div>
+      <div class="btn-group" style="margin-top:8px;">
+        <button class="btn btn-training" id="btn-training">🎯 Training Range</button>
+      </div>
+      <div id="join-section" style="display:none;">
+        <input id="room-id-input" type="text" placeholder="Room ID e.g. NEON-A7X3" maxlength="12">
+        <button class="btn btn-secondary btn-small" id="btn-join-room">Join Arena</button>
+        <button class="btn btn-small" id="btn-join-cancel">Cancel</button>
+      </div>
+      <div id="host-section" style="display:none;">
+        <div id="room-id-display">NEON-XXXX</div>
+        <button class="btn btn-primary btn-small" id="btn-copy-room">📋 Copy ID</button>
+        <div class="status-text" id="host-status">Waiting for players...</div>
+      </div>
+      <div class="status-text" id="title-status">Click Host or Join to start</div>
+    </div>
+  </div>
 
-      <!-- Weapon -->
-      <div class="lobby-section">
-        <div class="lobby-section-title">武器</div>
-        <div id="lobby-weapon-selector" class="ws-container">
-          <div class="ws-row">
-            <button class="ws-btn ws-prev" data-target="lobby">◀</button>
-            <div class="ws-info">
-              <div id="lobby-ws-name" class="ws-name">Pistol</div>
-              <div id="lobby-ws-stats" class="ws-stats"></div>
+  <!-- ========== ロビー画面（2カラム） ========== -->
+  <div id="lobby-screen" class="screen" style="display:none;">
+    <div id="lobby-inner">
+
+      <!-- ===== 左カラム: ROOM ID + SELECT ===== -->
+      <div id="lobby-left">
+
+        <!-- Room ID -->
+        <div id="lobby-room-id-section">
+          <div class="lobby-section-label">ルームID</div>
+          <div id="lobby-room-id">---</div>
+          <div id="lobby-room-role" class="lobby-room-role">Host</div>
+          <button class="btn btn-small" id="lobby-copy-room">📋 コピー</button>
+          <span id="lobby-copy-feedback"
+            style="display:none;color:#00ff88;font-size:0.8em;margin-left:8px;">コピー完了!</span>
+        </div>
+
+        <!-- Weapon -->
+        <div class="lobby-section">
+          <div class="lobby-section-title">武器</div>
+          <div id="lobby-weapon-selector" class="ws-container">
+            <div class="ws-row">
+              <button class="ws-btn ws-prev" data-target="lobby">◀</button>
+              <div class="ws-info">
+                <div id="lobby-ws-name" class="ws-name">Pistol</div>
+                <div id="lobby-ws-stats" class="ws-stats"></div>
+              </div>
+              <button class="ws-btn ws-next" data-target="lobby">▶</button>
             </div>
-            <button class="ws-btn ws-next" data-target="lobby">▶</button>
           </div>
         </div>
-      </div>
 
-      <!-- Passive -->
-      <div class="lobby-section">
-        <div class="lobby-section-title">パッシブ</div>
-        <div id="lobby-passive-selector" class="ps-container">
-          <div class="ps-row">
-            <button class="ps-btn ps-prev">◀</button>
-            <div class="ps-info">
-              <div id="lobby-ps-name" class="ps-name">Runner</div>
-              <div id="lobby-ps-icon" class="ps-icon">🏃</div>
-              <div id="lobby-ps-desc" class="ps-desc"></div>
-              <div id="lobby-ps-rarity" class="ps-rarity"></div>
+        <!-- Passive -->
+        <div class="lobby-section">
+          <div class="lobby-section-title">パッシブ</div>
+          <div id="lobby-passive-selector" class="ps-container">
+            <div class="ps-row">
+              <button class="ps-btn ps-prev">◀</button>
+              <div class="ps-info">
+                <div id="lobby-ps-name" class="ps-name">Runner</div>
+                <div id="lobby-ps-icon" class="ps-icon">🏃</div>
+                <div id="lobby-ps-desc" class="ps-desc"></div>
+                <div id="lobby-ps-rarity" class="ps-rarity"></div>
+              </div>
+              <button class="ps-btn ps-next">▶</button>
             </div>
-            <button class="ps-btn ps-next">▶</button>
           </div>
         </div>
+
       </div>
 
-    </div>
+      <!-- ===== 中央カラム: MAP + CONTROLS + STATUS ===== -->
+      <div id="lobby-middle">
 
-    <!-- ===== 中央カラム: MAP + CONTROLS + STATUS ===== -->
-    <div id="lobby-middle">
-
-      <!-- Current Map -->
-      <div class="lobby-section">
-        <div class="lobby-section-title">マップ</div>
-        <div id="lobby-map-selector" class="ms-container">
-          <div class="ms-row">
-            <button class="ms-btn ms-prev" id="map-prev">&#8249;</button>
-            <div class="ms-info">
-              <div id="lobby-map-name" class="ms-name">NEON GRID</div>
+        <!-- Current Map -->
+        <div class="lobby-section">
+          <div class="lobby-section-title">マップ</div>
+          <div id="lobby-map-selector" class="ms-container">
+            <div class="ms-row">
+              <button class="ms-btn ms-prev" id="map-prev">&#8249;</button>
+              <div class="ms-info">
+                <div id="lobby-map-name" class="ms-name">NEON GRID</div>
+              </div>
+              <button class="ms-btn ms-next" id="map-next">&#8250;</button>
             </div>
-            <button class="ms-btn ms-next" id="map-next">&#8250;</button>
+          </div>
+          <div id="map-preview-container">
+            <canvas id="map-preview-canvas" width="280" height="200"></canvas>
+          </div>
+          <div id="guest-map-preview-container" style="display:none;">
+            <canvas id="guest-map-preview-canvas" width="280" height="200"></canvas>
+          </div>
+          <div id="lobby-map-meta" class="ms-meta">
+            <div id="lobby-map-desc" class="ms-desc"></div>
+            <div id="lobby-map-rec" class="ms-rec"></div>
+            <div id="lobby-map-diff" class="ms-diff"></div>
           </div>
         </div>
-        <div id="map-preview-container">
-          <canvas id="map-preview-canvas" width="280" height="200"></canvas>
+
+        <!-- Controls -->
+        <div id="lobby-controls-host" style="display:none;">
+          <button class="btn btn-primary" id="btn-start-game" disabled>▶ ゲーム開始</button>
         </div>
-        <div id="guest-map-preview-container" style="display:none;">
-          <canvas id="guest-map-preview-canvas" width="280" height="200"></canvas>
+        <div id="lobby-controls-client" style="display:none;">
+          <button class="btn btn-secondary" id="btn-ready">▶ 準備完了</button>
         </div>
-        <div id="lobby-map-meta" class="ms-meta">
-          <div id="lobby-map-desc" class="ms-desc"></div>
-          <div id="lobby-map-rec" class="ms-rec"></div>
-          <div id="lobby-map-diff" class="ms-diff"></div>
-        </div>
-      </div>
 
-      <!-- Controls -->
-      <div id="lobby-controls-host" style="display:none;">
-        <button class="btn btn-primary" id="btn-start-game" disabled>▶ ゲーム開始</button>
-      </div>
-      <div id="lobby-controls-client" style="display:none;">
-        <button class="btn btn-secondary" id="btn-ready">▶ 準備完了</button>
-      </div>
-
-      <!-- Status -->
-      <div id="lobby-status-section">
-        <div class="lobby-status-row">
-          <span class="lobby-status-label">プレイヤー</span>
-          <span class="lobby-status-value" id="lobby-player-count">0 / 8</span>
-        </div>
-        <div class="lobby-status-row">
-          <span class="lobby-status-label">準備</span>
-          <span class="lobby-status-value" id="lobby-ready-count">0 / 1</span>
-        </div>
-        <div id="lobby-status-text" class="lobby-status-text">プレイヤーを待機中...</div>
-      </div>
-
-      <!-- Settings Toggle -->
-      <button class="btn btn-small" id="btn-settings">⚙ 設定</button>
-
-      <!-- Leave -->
-      <button class="btn btn-small" id="btn-leave-lobby">✕ 退出</button>
-    </div>
-
-    <!-- ===== 右カラム: プレイヤー一覧 ===== -->
-    <div id="lobby-right">
-      <div class="lobby-section-title">プレイヤー</div>
-      <div id="player-list"></div>
-    </div>
-
-  </div>
-</div>
-
-<!-- ========== 設定パネル ========== -->
-<div id="settings-panel" style="display:none;">
-  <div id="settings-inner">
-    <div class="settings-title">AUDIO SETTINGS</div>
-    <div class="settings-row">
-      <span class="settings-label">Master</span>
-      <input type="range" class="settings-slider" id="vol-master" min="0" max="100" value="100">
-    </div>
-    <div class="settings-row">
-      <span class="settings-label">Weapon</span>
-      <input type="range" class="settings-slider" id="vol-weapon" min="0" max="100" value="60">
-    </div>
-    <div class="settings-row">
-      <span class="settings-label">UI</span>
-      <input type="range" class="settings-slider" id="vol-ui" min="0" max="100" value="70">
-    </div>
-    <div class="settings-row">
-      <span class="settings-label">Effects</span>
-      <input type="range" class="settings-slider" id="vol-explosion" min="0" max="100" value="80">
-    </div>
-    <div class="settings-row">
-      <span class="settings-label">Player</span>
-      <input type="range" class="settings-slider" id="vol-player" min="0" max="100" value="60">
-    </div>
-    <button class="btn btn-small" id="btn-settings-close">CLOSE</button>
-  </div>
-</div>
-
-<!-- ========== カウントダウンオーバーレイ ========== -->
-<div id="countdown-overlay" style="display:none;">
-  <div id="countdown-text"></div>
-</div>
-
-<!-- ========== 試合HUD ========== -->
-<div id="hud" style="display:none;">
-  <div id="hud-top">
-    <div id="min-scoreboard"></div>
-    <div id="timer-display">03:00</div>
-    <div id="score-display">
-      <div class="score-row"><span class="score-label">K</span><span id="kill-count">0</span></div>
-      <div class="score-row"><span class="score-label">D</span><span id="death-count" style="color:#ff4444;">0</span></div>
-    </div>
-  </div>
-  <div id="hud-bottom">
-    <div id="health-container">
-      <span id="health-label">HP</span>
-      <div id="health-bar-bg"><div id="health-bar"></div></div>
-    </div>
-    <div>
-      <div id="ammo-display">--/--</div>
-      <div id="weapon-name"></div>
-      <div id="heat-bar-container" class="heat-bar-container" style="display:none;">
-        <div id="heat-bar-bg" class="heat-bar-bg">
-          <div id="heat-bar" class="heat-bar-fill"></div>
-        </div>
-        <div id="heat-bar-overheated" class="heat-bar-overheated" style="display:none;">OVERHEATED</div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div id="crosshair"><div id="crosshair-dot"></div></div>
-
-<!-- ========== キルアナウンス (中央) ========== -->
-<div id="kill-announcement"></div>
-
-<div id="kill-feed"></div>
-
-<div id="instructions" class="hidden">
-  WASD: MOVE · MOUSE: AIM · LEFT CLICK: SHOOT · SHIFT: DASH · R: RELOAD
-</div>
-
-<!-- ========== デス画面（キルカメラ） ========== -->
-<div id="death-screen">
-  <div id="death-inner">
-    <h2>ELIMINATED</h2>
-    <div id="death-info">
-      <div id="death-killer-name"></div>
-      <div id="death-weapon-name"></div>
-    </div>
-    <div id="respawn-countdown">3</div>
-    <div id="respawn-prompt" style="display:none;">
-      <div id="respawn-prompt-text">Respawn Ready</div>
-      <div id="respawn-prompt-sub">Press SPACE or Click to Respawn</div>
-      <button id="respawn-btn">▶ RESPAWN</button>
-    </div>
-    <div id="death-weapon-selector" class="ws-container">
-      <div class="ws-row">
-        <button class="ws-btn ws-prev" data-target="death">◀</button>
-        <div class="ws-info">
-          <div id="death-ws-name" class="ws-name">Pistol</div>
-          <div id="death-ws-stats" class="ws-stats"></div>
-        </div>
-        <button class="ws-btn ws-next" data-target="death">▶</button>
-      </div>
-    </div>
-    <div id="death-passive-selector" class="ps-container" style="margin-top:8px;">
-      <div class="ps-row">
-        <button class="ps-btn ps-prev">◀</button>
-        <div class="ps-info">
-          <div id="death-ps-name" class="ps-name">Runner</div>
-          <div id="death-ps-icon" class="ps-icon">🏃</div>
-          <div id="death-ps-desc" class="ps-desc"></div>
-        </div>
-        <button class="ps-btn ps-next">▶</button>
-      </div>
-    </div>
-    <div class="death-hint">Change weapon & passive for next spawn</div>
-  </div>
-</div>
-
-<!-- ========== リザルト画面 ========== -->
-<div id="result-screen">
-  <div id="result-inner">
-    <div id="result-winner-section">
-      <div id="result-winner-label">WINNER</div>
-      <div id="result-winner-name"></div>
-    </div>
-    <div id="result-list"></div>
-  </div>
-</div>
-
-<!-- ========== 射撃場 ========== -->
-<div id="training-screen" class="screen" style="display:none;"></div>
-<div id="training-overlays" style="display:none;">
-  <div id="training-left-panel">
-    <div class="training-panel-title">TRAINING RANGE</div>
-    <div class="training-section">
-      <div class="training-section-title">WEAPON</div>
-      <div id="training-weapon-list"></div>
-      <div id="training-weapon-info">
-        <div id="training-weapon-name" class="training-wp-name">Pistol</div>
-        <div id="training-weapon-desc" class="training-wp-desc"></div>
-        <div id="training-weapon-stats" class="training-wp-stats"></div>
-        <div id="training-weapon-playstyle" class="training-wp-playstyle"></div>
-      </div>
-    </div>
-    <div class="training-section">
-      <div class="training-section-title">PASSIVE</div>
-      <div id="training-passive-list"></div>
-    </div>
-    <div class="training-actions">
-      <button class="btn btn-primary btn-small" id="training-apply-btn">APPLY</button>
-      <button class="btn btn-secondary btn-small" id="training-reset-btn">↺ RESET</button>
-      <button class="btn btn-secondary btn-small" id="training-close-btn">✕ CLOSE</button>
-      <button class="btn btn-small" id="training-exit-btn">✕ EXIT TRAINING</button>
-    </div>
-  </div>
-  <button id="training-toggle-btn" class="training-toggle-btn" style="display:none;">⚙ LOADOUT</button>
-  <div id="training-stats-overlay">
-    <div class="training-stat">
-      <span class="training-stat-label">DAMAGE</span>
-      <span class="training-stat-value" id="training-damage-value">0</span>
-    </div>
-    <div class="training-stat">
-      <span class="training-stat-label">DPS</span>
-      <span class="training-stat-value" id="training-dps-value">0.0</span>
-    </div>
-    <div class="training-stat">
-      <span class="training-stat-label">HITS</span>
-      <span class="training-stat-value" id="training-hits-value">0</span>
-    </div>
-    <div class="training-stat">
-      <span class="training-stat-label">SHOTS</span>
-      <span class="training-stat-value" id="training-shots-value">0</span>
-    </div>
-    <div class="training-stat">
-      <span class="training-stat-label">ACCURACY</span>
-      <span class="training-stat-value" id="training-accuracy-value">0.0%</span>
-    </div>
-  </div>
-  <div id="training-heat-bar-container" class="heat-bar-container" style="display:none;">
-    <div class="heat-bar-bg"><div class="heat-bar-fill" id="training-heat-bar"></div></div>
-    <div class="heat-bar-overheated" id="training-heat-bar-overheated" style="display:none;">OVERHEATED</div>
-  </div>
-
-  <!-- 詳細説明パネル (右側) -->
-  <div id="training-detail-panel" class="td-panel" style="display:none;">
-    <div class="td-scroll">
-      <div id="td-weapon-header" class="td-header" style="display:none;">
-        <div class="td-name" id="td-wp-name"></div>
-        <div class="td-category" id="td-wp-category"></div>
-        <div class="td-stars" id="td-wp-stars"></div>
-        <div class="td-desc" id="td-wp-desc"></div>
-      </div>
-      <div id="td-weapon-stats-section" class="td-section" style="display:none;">
-        <div class="td-section-title">ステータス</div>
-        <div id="td-wp-stats" class="td-stats"></div>
-        <div id="td-wp-compare" class="td-compare"></div>
-      </div>
-      <div id="td-weapon-detail-section" class="td-section" style="display:none;">
-        <div class="td-section-title">詳細</div>
-        <div id="td-wp-strengths" class="td-list"></div>
-        <div id="td-wp-weaknesses" class="td-list"></div>
-        <div id="td-wp-recommended" class="td-list"></div>
-        <div id="td-wp-passives" class="td-list"></div>
-      </div>
-      <div id="td-passive-header" class="td-header" style="display:none;">
-        <div class="td-name" id="td-ps-name"></div>
-        <div class="td-category" id="td-ps-category"></div>
-        <div class="td-rarity" id="td-ps-rarity"></div>
-        <div class="td-effect" id="td-ps-effect"></div>
-      </div>
-      <div id="td-passive-detail-section" class="td-section" style="display:none;">
-        <div class="td-section-title">詳細情報</div>
-        <div id="td-ps-desc" class="td-desc"></div>
-        <div id="td-ps-synergy" class="td-list"></div>
-        <div id="td-ps-anti" class="td-list"></div>
-        <div id="td-ps-playstyle" class="td-list"></div>
-        <div id="td-ps-merits" class="td-list"></div>
-        <div id="td-ps-demerits" class="td-list"></div>
-        <div id="td-ps-compare" class="td-compare"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ツールチップ -->
-  <div id="training-tooltip" class="tt-container" style="display:none;"></div>
-
-  <!-- ゲームガイドモーダル -->
-  <div id="training-game-guide" class="tgg-modal" style="display:none;">
-    <div class="tgg-content">
-      <div class="tgg-title">ゲームガイド</div>
-      <div class="tgg-scroll">
-        <div class="tgg-section">
-          <div class="tgg-section-title">基本操作</div>
-          <div class="tgg-text">
-            <b>W/A/S/D</b> - 移動<br>
-            <b>マウス</b> - 照準<br>
-            <b>左クリック</b> - 射撃<br>
-            <b>Shift</b> - ダッシュ<br>
-            <b>R</b> - リロード<br>
-            <b>Esc</b> - メニュー開閉
+        <!-- Status -->
+        <div id="lobby-status-section">
+          <div class="lobby-status-row">
+            <span class="lobby-status-label">プレイヤー</span>
+            <span class="lobby-status-value" id="lobby-player-count">0 / 8</span>
           </div>
-        </div>
-        <div class="tgg-section">
-          <div class="tgg-section-title">武器の特徴</div>
-          <div class="tgg-text">
-            武器は12のカテゴリーに分類され、それぞれ異なる戦術的役割を持ちます。
-            ピストルは機動力が高く、SMGは近距離での制圧力に優れ、
-            スナイパーライフルは長距離からの一撃必殺を狙えます。
-            各武器には★評価が設定されており、威力・連射速度・射程・命中精度・機動力・リロード速度の6項目で数値化されています。
+          <div class="lobby-status-row">
+            <span class="lobby-status-label">準備</span>
+            <span class="lobby-status-value" id="lobby-ready-count">0 / 1</span>
           </div>
+          <div id="lobby-status-text" class="lobby-status-text">プレイヤーを待機中...</div>
         </div>
-        <div class="tgg-section">
-          <div class="tgg-section-title">パッシブの特徴</div>
-          <div class="tgg-text">
-            パッシブスキルは武器に常時適用される効果です。移動速度の上昇、火力の増加、防御力の強化など、
-            多彩な効果の中から最大5つまで同時に選択できます。
-            パッシブはカテゴリーごとに効果が分類されており、自分のプレイスタイルに合わせて組み合わせることが重要です。
-          </div>
-        </div>
-        <div class="tgg-section">
-          <div class="tgg-section-title">勝つためのコツ</div>
-          <div class="tgg-text">
-            • 自分のプレイスタイルに合った武器を選びましょう<br>
-            • パッシブの組み合わせで武器の弱点を補いましょう<br>
-            • マップの構造を把握し、有利な位置を取りましょう<br>
-            • ダッシュを活用して不意の攻撃を避けましょう<br>
-            • リロードのタイミングに注意。安全な場所で行いましょう<br>
-            • チーム戦では味方との連携を意識しましょう
-          </div>
-        </div>
-        <div class="tgg-section">
-          <div class="tgg-section-title">ヘッドショット</div>
-          <div class="tgg-text">
-            敵の頭部を狙うと通常より大きなダメージを与えられます。
-            ヘッドショット倍率は武器によって異なり、リボルバーやスナイパーライフルは特に高い倍率を持ちます。
-            精度の高い射撃ができるプレイヤーほど、ヘッドショットを狙う価値があります。
-          </div>
-        </div>
-        <div class="tgg-section">
-          <div class="tgg-section-title">クリティカル</div>
-          <div class="tgg-text">
-            一部の攻撃はクリティカルヒットとなり、通常より高いダメージを与えます。
-             Lucky ShotやDeadeyeなどのパッシブでクリティカル率やダメージを強化できます。
-            クリティカルはヘッドショットとは別に発生し、両方が同時に発生することもあります。
-          </div>
-        </div>
-        <div class="tgg-section">
-          <div class="tgg-section-title">爆発武器</div>
-          <div class="tgg-text">
-            ロケットランチャーやグレネードランチャーなどの爆発武器は、範囲攻撃で複数の敵を同時に攻撃できます。
-            ただし爆発に自身も巻き込まれる可能性があるため、使用距離には注意が必要です。
-            Iron Skinパッシブで爆発ダメージを軽減できます。
-          </div>
-        </div>
-        <div class="tgg-section">
-          <div class="tgg-section-title">ビーム武器</div>
-          <div class="tgg-text">
-            プラズマライフルやレーザーライフルなどのビーム武器は、継続的なダメージを与えます。
-            ビームの幅や射程を強化するパッシブを組み合わせることで、より効果的に戦えます。
-            ビーム武器はオーバーヒートに注意。撃ち過ぎると一時的に使用不能になります。
-          </div>
-        </div>
-        <div class="tgg-section">
-          <div class="tgg-section-title">エネルギー武器</div>
-          <div class="tgg-text">
-            エネルギー武器はリロード不要で、オーバーヒート管理のみで運用します。
-            冷却システムパッシブとの相性が良く、継続的な火力を維持できます。
-            弾薬切れの心配がないため、積極的に攻撃を仕掛けられます。
-          </div>
-        </div>
-        <div class="tgg-section">
-          <div class="tgg-section-title">ドローン武器</div>
-          <div class="tgg-text">
-            ドローン武器は展開型の装備で、自動で攻撃を行います。
-            アタックドローン、ミサイルドローン、オービットドローン、タレットランチャーの4種類があります。
-            展開中は他の武器が使用できないため、設置場所とタイミングが重要です。
-            Engineerパッシブでドローンの維持が容易になります。
-          </div>
-        </div>
+
+        <!-- Settings Toggle -->
+        <button class="btn btn-small" id="btn-settings">⚙ 設定</button>
+
+        <!-- Leave -->
+        <button class="btn btn-small" id="btn-leave-lobby">✕ 退出</button>
       </div>
-      <button class="btn btn-small tgg-close-btn">閉じる</button>
+
+      <!-- ===== 右カラム: プレイヤー一覧 ===== -->
+      <div id="lobby-right">
+        <div class="lobby-section-title">プレイヤー</div>
+        <div id="player-list"></div>
+      </div>
+
     </div>
   </div>
 
-  <div class="training-actions" style="position:fixed;bottom:60px;left:50%;transform:translateX(-50%);z-index:30;gap:8px;">
-    <button class="btn btn-small" id="training-guide-btn">📖 ゲームガイド</button>
+  <!-- ========== 設定パネル ========== -->
+  <div id="settings-panel" style="display:none;">
+    <div id="settings-inner">
+      <div class="settings-title">AUDIO SETTINGS</div>
+      <div class="settings-row">
+        <span class="settings-label">Master</span>
+        <input type="range" class="settings-slider" id="vol-master" min="0" max="100" value="100">
+      </div>
+      <div class="settings-row">
+        <span class="settings-label">Weapon</span>
+        <input type="range" class="settings-slider" id="vol-weapon" min="0" max="100" value="60">
+      </div>
+      <div class="settings-row">
+        <span class="settings-label">UI</span>
+        <input type="range" class="settings-slider" id="vol-ui" min="0" max="100" value="70">
+      </div>
+      <div class="settings-row">
+        <span class="settings-label">Effects</span>
+        <input type="range" class="settings-slider" id="vol-explosion" min="0" max="100" value="80">
+      </div>
+      <div class="settings-row">
+        <span class="settings-label">Player</span>
+        <input type="range" class="settings-slider" id="vol-player" min="0" max="100" value="60">
+      </div>
+      <button class="btn btn-small" id="btn-settings-close">CLOSE</button>
+    </div>
   </div>
-  <div class="training-hint">WASD: MOVE · MOUSE: AIM · LEFT CLICK: SHOOT · SHIFT: DASH · R: RELOAD</div>
-</div>
 
-<!-- ========== チート検出オーバーレイ ========== -->
-<div id="cheat-detected-screen">
-  <div id="cheat-detected-inner">
-    <div id="cheat-detected-title">⚠ CHEAT DETECTED ⚠</div>
-    <div id="cheat-detected-player"></div>
-    <div id="cheat-detected-reason"></div>
-    <div id="cheat-detected-sub">Match Cancelled</div>
+  <!-- ========== カウントダウンオーバーレイ ========== -->
+  <div id="countdown-overlay" style="display:none;">
+    <div id="countdown-text"></div>
   </div>
-</div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
-<script src="config.js"></script>
-<script src="MapRegistry.js"></script>
-<script src="WeaponRegistry.js"></script>
-<script src="WeaponManager.js"></script>
-<script src="BeamManager.js"></script>
-<script src="SoundRegistry.js"></script>
-<script src="AudioManager.js"></script>
-<script src="CheatValidator.js"></script>
-<script src="CheatManager.js"></script>
-<script src="ObjectPool.js"></script>
-<script src="ParticlePool.js"></script>
-<script src="LightPool.js"></script>
-<script src="ProjectilePool.js"></script>
-<script src="HitValidator.js"></script>
-<script src="HostAuthority.js"></script>
-<script src="ParticleManager.js"></script>
-<script src="CameraEffectManager.js"></script>
-<script src="EffectManager.js"></script>
-<script src="projectile.js"></script>
-<script src="player.js"></script>
-<script src="GameState.js?v=2"></script>
-<script src="network.js?v=2"></script>
-<script src="MatchStatsManager.js"></script>
-<script src="KillFeedManager.js"></script>
-<script src="PassiveRegistry.js"></script>
-<script src="PassiveManager.js"></script>
-<script src="TrainingTarget.js"></script>
-<script src="TrainingManager.js"></script>
-<script src="TrainingUI.js"></script>
-<script src="game.js?v=2"></script>
-<script src="main.js?v=2"></script>
+  <!-- ========== 試合HUD ========== -->
+  <div id="hud" style="display:none;">
+    <div id="hud-top">
+      <div id="min-scoreboard"></div>
+      <div id="timer-display">03:00</div>
+      <div id="score-display">
+        <div class="score-row"><span class="score-label">K</span><span id="kill-count">0</span></div>
+        <div class="score-row"><span class="score-label">D</span><span id="death-count" style="color:#ff4444;">0</span>
+        </div>
+      </div>
+    </div>
+    <div id="hud-bottom">
+      <div id="health-container">
+        <span id="health-label">HP</span>
+        <div id="health-bar-bg">
+          <div id="health-bar"></div>
+        </div>
+      </div>
+      <div>
+        <div id="ammo-display">--/--</div>
+        <div id="weapon-name"></div>
+        <div id="heat-bar-container" class="heat-bar-container" style="display:none;">
+          <div id="heat-bar-bg" class="heat-bar-bg">
+            <div id="heat-bar" class="heat-bar-fill"></div>
+          </div>
+          <div id="heat-bar-overheated" class="heat-bar-overheated" style="display:none;">OVERHEATED</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="crosshair">
+    <div id="crosshair-dot"></div>
+  </div>
+
+  <!-- ========== キルアナウンス (中央) ========== -->
+  <div id="kill-announcement"></div>
+
+  <div id="kill-feed"></div>
+
+  <div id="instructions" class="hidden">
+    WASD: MOVE · MOUSE: AIM · LEFT CLICK: SHOOT · SHIFT: DASH · R: RELOAD
+  </div>
+
+  <!-- ========== デス画面（キルカメラ） ========== -->
+  <div id="death-screen">
+    <div id="death-inner">
+      <h2>ELIMINATED</h2>
+      <div id="death-info">
+        <div id="death-killer-name"></div>
+        <div id="death-weapon-name"></div>
+      </div>
+      <div id="respawn-countdown">3</div>
+      <div id="respawn-prompt" style="display:none;">
+        <div id="respawn-prompt-text">Respawn Ready</div>
+        <div id="respawn-prompt-sub">Press SPACE or Click to Respawn</div>
+        <button id="respawn-btn">▶ RESPAWN</button>
+      </div>
+      <div id="death-weapon-selector" class="ws-container">
+        <div class="ws-row">
+          <button class="ws-btn ws-prev" data-target="death">◀</button>
+          <div class="ws-info">
+            <div id="death-ws-name" class="ws-name">Pistol</div>
+            <div id="death-ws-stats" class="ws-stats"></div>
+          </div>
+          <button class="ws-btn ws-next" data-target="death">▶</button>
+        </div>
+      </div>
+      <div id="death-passive-selector" class="ps-container" style="margin-top:8px;">
+        <div class="ps-row">
+          <button class="ps-btn ps-prev">◀</button>
+          <div class="ps-info">
+            <div id="death-ps-name" class="ps-name">Runner</div>
+            <div id="death-ps-icon" class="ps-icon">🏃</div>
+            <div id="death-ps-desc" class="ps-desc"></div>
+          </div>
+          <button class="ps-btn ps-next">▶</button>
+        </div>
+      </div>
+      <div class="death-hint">Change weapon & passive for next spawn</div>
+    </div>
+  </div>
+
+  <!-- ========== リザルト画面 ========== -->
+  <div id="result-screen">
+    <div id="result-inner">
+      <div id="result-winner-section">
+        <div id="result-winner-label">WINNER</div>
+        <div id="result-winner-name"></div>
+      </div>
+      <div id="result-list"></div>
+    </div>
+  </div>
+
+  <!-- ========== 射撃場 ========== -->
+  <div id="training-screen" class="screen" style="display:none;"></div>
+  <div id="training-overlays" style="display:none;">
+    <div id="training-left-panel">
+      <div class="training-panel-title">TRAINING RANGE</div>
+      <div class="training-section">
+        <div class="training-section-title">WEAPON</div>
+        <div id="training-weapon-list"></div>
+        <div id="training-weapon-info">
+          <div id="training-weapon-name" class="training-wp-name">Pistol</div>
+          <div id="training-weapon-desc" class="training-wp-desc"></div>
+          <div id="training-weapon-stats" class="training-wp-stats"></div>
+          <div id="training-weapon-playstyle" class="training-wp-playstyle"></div>
+        </div>
+      </div>
+      <div class="training-section">
+        <div class="training-section-title">PASSIVE</div>
+        <div id="training-passive-list"></div>
+      </div>
+      <div class="training-actions">
+        <button class="btn btn-primary btn-small" id="training-apply-btn">APPLY</button>
+        <button class="btn btn-secondary btn-small" id="training-reset-btn">↺ RESET</button>
+        <button class="btn btn-secondary btn-small" id="training-close-btn">✕ CLOSE</button>
+        <button class="btn btn-small" id="training-exit-btn">✕ EXIT TRAINING</button>
+      </div>
+    </div>
+    <button id="training-toggle-btn" class="training-toggle-btn" style="display:none;">⚙ LOADOUT</button>
+    <div id="training-stats-overlay">
+      <div class="training-stat">
+        <span class="training-stat-label">DAMAGE</span>
+        <span class="training-stat-value" id="training-damage-value">0</span>
+      </div>
+      <div class="training-stat">
+        <span class="training-stat-label">DPS</span>
+        <span class="training-stat-value" id="training-dps-value">0.0</span>
+      </div>
+      <div class="training-stat">
+        <span class="training-stat-label">HITS</span>
+        <span class="training-stat-value" id="training-hits-value">0</span>
+      </div>
+      <div class="training-stat">
+        <span class="training-stat-label">SHOTS</span>
+        <span class="training-stat-value" id="training-shots-value">0</span>
+      </div>
+      <div class="training-stat">
+        <span class="training-stat-label">ACCURACY</span>
+        <span class="training-stat-value" id="training-accuracy-value">0.0%</span>
+      </div>
+    </div>
+    <div id="training-heat-bar-container" class="heat-bar-container" style="display:none;">
+      <div class="heat-bar-bg">
+        <div class="heat-bar-fill" id="training-heat-bar"></div>
+      </div>
+      <div class="heat-bar-overheated" id="training-heat-bar-overheated" style="display:none;">OVERHEATED</div>
+    </div>
+
+    <!-- 詳細説明パネル (右側) -->
+    <div id="training-detail-panel" class="td-panel" style="display:none;">
+      <div class="td-scroll">
+        <div id="td-weapon-header" class="td-header" style="display:none;">
+          <div class="td-name" id="td-wp-name"></div>
+          <div class="td-category" id="td-wp-category"></div>
+          <div class="td-stars" id="td-wp-stars"></div>
+          <div class="td-desc" id="td-wp-desc"></div>
+        </div>
+        <div id="td-weapon-stats-section" class="td-section" style="display:none;">
+          <div class="td-section-title">ステータス</div>
+          <div id="td-wp-stats" class="td-stats"></div>
+          <div id="td-wp-compare" class="td-compare"></div>
+        </div>
+        <div id="td-weapon-detail-section" class="td-section" style="display:none;">
+          <div class="td-section-title">詳細</div>
+          <div id="td-wp-strengths" class="td-list"></div>
+          <div id="td-wp-weaknesses" class="td-list"></div>
+          <div id="td-wp-recommended" class="td-list"></div>
+          <div id="td-wp-passives" class="td-list"></div>
+        </div>
+        <div id="td-passive-header" class="td-header" style="display:none;">
+          <div class="td-name" id="td-ps-name"></div>
+          <div class="td-category" id="td-ps-category"></div>
+          <div class="td-rarity" id="td-ps-rarity"></div>
+          <div class="td-effect" id="td-ps-effect"></div>
+        </div>
+        <div id="td-passive-detail-section" class="td-section" style="display:none;">
+          <div class="td-section-title">詳細情報</div>
+          <div id="td-ps-desc" class="td-desc"></div>
+          <div id="td-ps-synergy" class="td-list"></div>
+          <div id="td-ps-anti" class="td-list"></div>
+          <div id="td-ps-playstyle" class="td-list"></div>
+          <div id="td-ps-merits" class="td-list"></div>
+          <div id="td-ps-demerits" class="td-list"></div>
+          <div id="td-ps-compare" class="td-compare"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ツールチップ -->
+    <div id="training-tooltip" class="tt-container" style="display:none;"></div>
+
+    <div class="training-actions"
+      style="position:fixed;bottom:60px;left:50%;transform:translateX(-50%);z-index:30;gap:8px;">
+      <button class="btn btn-small" id="training-guide-btn">📖 ゲームガイド</button>
+    </div>
+    <div class="training-hint">WASD: MOVE · MOUSE: AIM · LEFT CLICK: SHOOT · SHIFT: DASH · R: RELOAD</div>
+  </div>
+
+  <!-- ========== チート検出オーバーレイ ========== -->
+  <div id="cheat-detected-screen">
+    <div id="cheat-detected-inner">
+      <div id="cheat-detected-title">⚠ CHEAT DETECTED ⚠</div>
+      <div id="cheat-detected-player"></div>
+      <div id="cheat-detected-reason"></div>
+      <div id="cheat-detected-sub">Match Cancelled</div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+  <script src="config.js"></script>
+  <script src="MapRegistry.js"></script>
+  <script src="WeaponRegistry.js"></script>
+  <script src="WeaponManager.js"></script>
+  <script src="BeamManager.js"></script>
+  <script src="SoundRegistry.js"></script>
+  <script src="AudioManager.js"></script>
+  <script src="CheatValidator.js"></script>
+  <script src="CheatManager.js"></script>
+  <script src="ObjectPool.js"></script>
+  <script src="ParticlePool.js"></script>
+  <script src="LightPool.js"></script>
+  <script src="ProjectilePool.js"></script>
+  <script src="HitValidator.js"></script>
+  <script src="HostAuthority.js"></script>
+  <script src="ParticleManager.js"></script>
+  <script src="CameraEffectManager.js"></script>
+  <script src="EffectManager.js"></script>
+  <script src="projectile.js"></script>
+  <script src="player.js"></script>
+  <script src="GameState.js?v=2"></script>
+  <script src="network.js?v=2"></script>
+  <script src="MatchStatsManager.js"></script>
+  <script src="KillFeedManager.js"></script>
+  <script src="PassiveRegistry.js"></script>
+  <script src="PassiveManager.js"></script>
+  <script src="TrainingTarget.js"></script>
+  <script src="TrainingManager.js"></script>
+  <script src="TrainingUI.js"></script>
+  <script src="game.js?v=2"></script>
+  <script src="main.js?v=2"></script>
 </body>
+
 </html>

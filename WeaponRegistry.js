@@ -1,11 +1,21 @@
+// ============================================================
+// NEON ARENA - 武器レジストリ
+// 全武器の定義、管理、検索機能を提供
+// ============================================================
+
 class WeaponRegistry {
   constructor() {
-    this._list = [];
-    this._map = {};
-    this._defineAll();
-    this._initDetails();
+    this._list = [];      // 武器IDのリスト
+    this._map = {};       // 武器ID -> 定義オブジェクトのマップ
+    this._defineAll();    // 全武器の基本定義
+    this._initDetails();  // 日本語詳細データの初期化
   }
 
+  /**
+   * 武器定義を追加・正規化
+   * @param {string} id - 武器ID
+   * @param {Object} def - 武器定義オブジェクト
+   */
   _add(id, def) {
     def.id = id;
     def.pellets = def.pellets || 1;
@@ -49,6 +59,11 @@ class WeaponRegistry {
     this._map[id] = def;
   }
 
+  /**
+   * 武器性能の星評価を計算
+   * @param {Object} wp - 武器定義
+   * @returns {Object} 星評価オブジェクト
+   */
   _calcStars(wp) {
     const dmg = wp.damage * (wp.pellets || 1);
     const rate = 1 / (wp.fireRate || 0.25);
@@ -64,6 +79,12 @@ class WeaponRegistry {
     return stars;
   }
 
+  /**
+   * 値から星評価を算出
+   * @param {number} val - 評価値
+   * @param {number[]} thresholds - しきい値配列
+   * @returns {number} 星の数（1-5）
+   */
   _star(val, thresholds) {
     for (let i = thresholds.length - 1; i >= 0; i--) {
       if (val >= thresholds[i]) return i + 1;
@@ -71,6 +92,9 @@ class WeaponRegistry {
     return 1;
   }
 
+  /**
+   * 全武器の基本パラメータを定義
+   */
   _defineAll() {
     /* ======================== */
     /* PISTOL (6)               */
@@ -1089,26 +1113,71 @@ class WeaponRegistry {
     }
   }
 
+  /**
+   * 登録済み全武器IDを取得
+   * @returns {string[]} 武器ID配列（コピー）
+   */
   getAll() { return this._list.slice(); }
+
+  /**
+   * 指定IDの武器定義を取得
+   * @param {string} id - 武器ID
+   * @returns {Object|null} 武器定義またはnull
+   */
   get(id) { return this._map[id] || null; }
+
+  /**
+   * 武器IDのインデックスを取得
+   * @param {string} id - 武器ID
+   * @returns {number} インデックス（見つからない場合-1）
+   */
   getIndex(id) { return this._list.indexOf(id); }
+
+  /**
+   * 指定インデックスの武器IDを取得（ループ対応）
+   * @param {number} index - インデックス
+   * @returns {string} 武器ID
+   */
   at(index) {
     if (index < 0) index = this._list.length - 1;
     else if (index >= this._list.length) index = 0;
     return this._list[index];
   }
+
+  /**
+   * 指定武器の次の武器IDを取得
+   * @param {string} id - 基準武器ID
+   * @returns {string} 次の武器ID
+   */
   next(id) {
     const idx = this.getIndex(id);
     if (idx === -1) return this._list[0];
     return this.at(idx + 1);
   }
+
+  /**
+   * 指定武器の前の武器IDを取得
+   * @param {string} id - 基準武器ID
+   * @returns {string} 前の武器ID
+   */
   prev(id) {
     const idx = this.getIndex(id);
     if (idx === -1) return this._list[this._list.length - 1];
     return this.at(idx - 1);
   }
+
+  /**
+   * 登録武器数を取得
+   * @returns {number} 武器数
+   */
   count() { return this._list.length; }
 
+  /**
+   * 新規武器を動的追加
+   * @param {string} id - 武器ID
+   * @param {Object} def - 武器定義
+   * @returns {boolean} 追加成功可否
+   */
   add(id, def) {
     if (this._map[id]) return false;
     this._add(id, def);
@@ -1116,6 +1185,10 @@ class WeaponRegistry {
     return true;
   }
 
+  /**
+   * 存在するカテゴリ一覧を取得
+   * @returns {string[]} カテゴリ配列
+   */
   getCategories() {
     const cats = new Set();
     for (const id of this._list) {
@@ -1124,23 +1197,47 @@ class WeaponRegistry {
     return Array.from(cats);
   }
 
+  /**
+   * カテゴリで武器を絞り込み
+   * @param {string} category - カテゴリ名
+   * @returns {string[]} 武器ID配列
+   */
   getByCategory(category) {
     return this._list.filter(id => this._map[id].category === category);
   }
 
+  /**
+   * 武器タイプで絞り込み
+   * @param {string} weaponType - 武器タイプ
+   * @returns {string[]} 武器ID配列
+   */
   getByType(weaponType) {
     return this._list.filter(id => this._map[id].weaponType === weaponType);
   }
 
+  /**
+   * プレイスタイルで絞り込み
+   * @param {string} playstyle - プレイスタイル
+   * @returns {string[]} 武器ID配列
+   */
   getByPlaystyle(playstyle) {
     return this._list.filter(id => this._map[id].playstyle === playstyle);
   }
 
+  /** ID順ソート */
   sortById() { return this._list.slice(); }
+  /** ダメージ降順ソート */
   sortByDamage() { return this._list.slice().sort((a, b) => (this._map[b].damage * (this._map[b].pellets || 1)) - (this._map[a].damage * (this._map[a].pellets || 1))); }
+  /** 連射速度昇順ソート（火力速い順） */
   sortByFireRate() { return this._list.slice().sort((a, b) => this._map[a].fireRate - this._map[b].fireRate); }
+  /** 射程降順ソート */
   sortByRange() { return this._list.slice().sort((a, b) => this._map[b].range - this._map[a].range); }
 
+  /**
+   * キーワード検索
+   * @param {string} query - 検索クエリ
+   * @returns {string[]} マッチする武器ID配列
+   */
   search(query) {
     const q = query.toLowerCase();
     return this._list.filter(id => {
@@ -1152,15 +1249,23 @@ class WeaponRegistry {
     });
   }
 
+  /** 星評価を文字列化（★☆形式） */
   starsToString(n) { return "★".repeat(Math.max(1, Math.min(5, n || 1))) + "☆".repeat(Math.max(0, 5 - Math.max(1, Math.min(5, n || 1)))); }
 
+  /** 星のみ文字列化 */
   _starStr(n) { return "★".repeat(Math.max(1, Math.min(5, n || 1))); }
 
+  /** ステータス表示用HTMLセル生成 */
   _statCell(label, stars, value) {
     const v = value != null ? ` <span class="ws-sval-num">${value}</span>` : '';
     return `<div class="ws-scell"><span class="ws-slbl">${label}</span><span class="ws-sval">${this._starStr(stars)}${v}</span></div>`;
   }
 
+  /**
+   * 武器のステータス表示用HTML行配列を生成
+   * @param {string} id - 武器ID
+   * @returns {string[]} HTML文字列配列
+   */
   statsLines(id) {
     const w = this.get(id);
     if (!w) return [];
