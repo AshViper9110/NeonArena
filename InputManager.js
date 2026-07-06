@@ -70,6 +70,14 @@ class InputManager {
     return true;
   }
 
+  ensureEditorUI() {
+    this._cleanupTouchButtons();
+    this._createTouchButtons();
+    this._touchControlsCreated = true;
+    this._enforceTouchVisibility(true);
+    console.log('[LayoutEditor] Mobile UI created');
+  }
+
   destroyMobileUI() {
     if (this._joystick) {
       this._joystick.destroy();

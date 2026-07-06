@@ -506,23 +506,33 @@ function _onLayoutDragEnd(e) {
 }
 
 function _openLayoutEditor() {
-  if (!_isMobile()) return;
+  console.log('[LayoutEditor] Open');
   _layoutEditMode = true;
   if (game.input) game.input._editingLayout = true;
   const overlay = document.getElementById('overlay');
   if (overlay && !overlay.classList.contains('hidden')) {
     overlay.style.display = 'none';
   }
-  if (game.input && !game.input._touchControlsCreated) {
-    game.input.ensureMobileUI();
+  if (game.input) {
+    if (!game.input._touchControlsCreated) {
+      game.input.ensureEditorUI();
+    } else {
+      game.input._enforceTouchVisibility(true);
+    }
   }
+  ['fire', 'dash', 'reload'].forEach(a => {
+    const el = document.getElementById('touch-' + a);
+    if (el) console.log('[LayoutEditor] ' + a.charAt(0).toUpperCase() + a.slice(1) + ' found');
+    else console.error('[LayoutEditor] touch-' + a + ' NOT found');
+  });
   const layout = _getLayoutFromSettings();
   _applyLayoutToEditor(layout);
   document.getElementById('mobile-layout-editor').style.display = '';
-  game.input.firePressed = false;
-  game.input.fireClicked = false;
+  if (game.input) {
+    game.input.firePressed = false;
+    game.input.fireClicked = false;
+  }
   _bindLayoutDrag();
-  console.log('[MobileUI] Enter edit mode');
 }
 
 function _closeLayoutEditor() {
@@ -596,7 +606,7 @@ function _saveLayout() {
   if (game.input && game.input.applyLayout) {
     game.input.applyLayout();
   }
-  console.log('[MobileUI] Layout saved');
+  console.log('[LayoutEditor] Save complete');
   _closeLayoutEditor();
 }
 
@@ -616,10 +626,9 @@ function _resetLayout() {
 
 /* ---- Layout edit button ---- */
 document.getElementById('btn-layout-edit').addEventListener('click', () => {
-  if (_isMobile()) {
-    closeSettings();
-    _openLayoutEditor();
-  }
+  console.log('[LayoutEditor] Button clicked');
+  closeSettings();
+  _openLayoutEditor();
 });
 
 /* ---- Layout editor save/reset/close ---- */
@@ -631,7 +640,7 @@ document.getElementById('mle-done-btn').addEventListener('click', _saveLayout);
 /* ---- Reapply layout on resize for responsive positioning ---- */
 window.addEventListener('resize', () => {
   if (_layoutEditMode) return;
-  if (_isMobile() && game.input && game.input.applyLayout) {
+  if (game.input && game.input.applyLayout) {
     game.input.applyLayout();
   }
 });
