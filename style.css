@@ -2605,6 +2605,7 @@ textarea:focus {
   width: 100vw; height: 100vh;
   z-index: 100;
   display: none;
+  pointer-events: none;
 }
 #mle-backdrop {
   position: absolute;
@@ -2613,6 +2614,34 @@ textarea:focus {
   background: rgba(0,0,0,0.5);
   backdrop-filter: blur(4px);
   pointer-events: none;
+}
+#mle-done-btn {
+  position: fixed;
+  top: max(12px, env(safe-area-inset-top, 0px));
+  left: max(12px, env(safe-area-inset-left, 0px));
+  z-index: 102;
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  font-size: 0.8em;
+  letter-spacing: 2px;
+  padding: 10px 20px;
+  background: rgba(0,240,255,0.15);
+  border: 1px solid rgba(0,240,255,0.3);
+  border-radius: 8px;
+  color: #00f0ff;
+  cursor: pointer;
+  pointer-events: auto;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 0 20px rgba(0,240,255,0.1);
+}
+#mle-done-btn:hover {
+  background: rgba(0,240,255,0.25);
+}
+#mle-done-btn:active {
+  background: rgba(0,240,255,0.35);
+  transform: scale(0.95);
 }
 #mle-panel {
   position: absolute;

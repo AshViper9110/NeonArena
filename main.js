@@ -509,6 +509,13 @@ function _openLayoutEditor() {
   if (!_isMobile()) return;
   _layoutEditMode = true;
   if (game.input) game.input._editingLayout = true;
+  const overlay = document.getElementById('overlay');
+  if (overlay && !overlay.classList.contains('hidden')) {
+    overlay.style.display = 'none';
+  }
+  if (game.input && !game.input._touchControlsCreated) {
+    game.input.ensureMobileUI();
+  }
   const layout = _getLayoutFromSettings();
   _applyLayoutToEditor(layout);
   document.getElementById('mobile-layout-editor').style.display = '';
@@ -522,6 +529,10 @@ function _closeLayoutEditor() {
   _layoutEditMode = false;
   _layoutDragData = null;
   if (game.input) game.input._editingLayout = false;
+  const overlay = document.getElementById('overlay');
+  if (overlay) {
+    overlay.style.display = '';
+  }
   document.getElementById('mobile-layout-editor').style.display = 'none';
   _unbindLayoutDrag();
 }
@@ -615,6 +626,7 @@ document.getElementById('btn-layout-edit').addEventListener('click', () => {
 document.getElementById('mle-save').addEventListener('click', _saveLayout);
 document.getElementById('mle-reset').addEventListener('click', _resetLayout);
 document.getElementById('mle-close').addEventListener('click', _closeLayoutEditor);
+document.getElementById('mle-done-btn').addEventListener('click', _saveLayout);
 
 /* ---- Reapply layout on resize for responsive positioning ---- */
 window.addEventListener('resize', () => {
