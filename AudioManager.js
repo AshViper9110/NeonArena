@@ -32,9 +32,24 @@ class AudioManager {
       for (let i = 0; i < bufSize; i++) data[i] = Math.random() * 2 - 1;
 
       this._initialized = true;
+      this._resumeOnInteraction();
     } catch (e) {
       console.warn('[Audio] Web Audio API not available:', e);
     }
+  }
+
+  _resumeOnInteraction() {
+    const resume = () => {
+      if (this.ctx && this.ctx.state === 'suspended') {
+        this.ctx.resume().catch(() => {});
+      }
+      document.removeEventListener('click', resume);
+      document.removeEventListener('keydown', resume);
+      document.removeEventListener('touchstart', resume);
+    };
+    document.addEventListener('click', resume);
+    document.addEventListener('keydown', resume);
+    document.addEventListener('touchstart', resume);
   }
 
   setVolume(category, value) {
@@ -66,7 +81,7 @@ class AudioManager {
   play(id, options = {}) {
     this._init();
     if (!this._initialized) return null;
-    if (this.ctx.state === 'suspended') this.ctx.resume();
+    if (this.ctx.state === 'suspended') this.ctx.resume().catch(() => {});
 
     const def = SOUNDS[id];
     if (!def) return null;

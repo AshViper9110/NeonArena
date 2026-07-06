@@ -96,12 +96,14 @@ class Game {
       case GameState.TITLE:
         document.getElementById('title-screen').style.display = '';
         this._clearGameWorld();
+        this._updateTouchControlsVisibility();
         break;
       case GameState.LOBBY:
         document.getElementById('lobby-screen').style.display = '';
         this._lastPreviewedMap = null;
         this._updateLobbyRoomID();
         this._updateLobbyUI();
+        this._updateTouchControlsVisibility();
         break;
       case GameState.COUNTDOWN:
         this._startCountdown();
@@ -109,12 +111,14 @@ class Game {
       case GameState.PLAYING:
         document.getElementById('hud').style.display = '';
         document.getElementById('instructions').classList.remove('hidden');
+        this._updateTouchControlsVisibility();
         break;
       case GameState.RESULT:
         document.getElementById('result-screen').classList.add('show');
         document.getElementById('hud').style.display = 'none';
         document.getElementById('instructions').classList.add('hidden');
         document.getElementById('death-screen').classList.remove('show');
+        this._updateTouchControlsVisibility();
         break;
       case GameState.CHEAT_DETECTED:
         document.getElementById('cheat-detected-screen').classList.add('show');
@@ -122,12 +126,14 @@ class Game {
         document.getElementById('instructions').classList.add('hidden');
         document.getElementById('death-screen').classList.remove('show');
         document.getElementById('respawn-prompt').style.display = 'none';
+        this._updateTouchControlsVisibility();
         break;
       case GameState.TRAINING:
         document.getElementById('training-overlays').style.display = '';
         document.getElementById('hud').style.display = 'none';
         document.getElementById('instructions').classList.add('hidden');
         this._enterTraining();
+        this._updateTouchControlsVisibility();
         break;
     }
   }
@@ -178,7 +184,18 @@ class Game {
     this.animate();
   }
 
-  _setupInputEvents() {
+  _updateTouchControlsVisibility() {
+    const tc = document.getElementById('touch-controls');
+    if (!tc) return;
+    if (!this.input || !this.input.isMobile) { tc.style.display = 'none'; return; }
+    if (this.gameState === GameState.PLAYING) {
+      tc.style.display = '';
+    } else if (this.gameState === GameState.TRAINING) {
+      const panel = document.getElementById('training-left-panel');
+      tc.style.display = (panel && !panel.classList.contains('closed')) ? 'none' : '';
+    } else {
+      tc.style.display = 'none';
+    }
   }
 
   _setupLights() {
@@ -2259,7 +2276,7 @@ class Game {
 
   _handlePlayerInput(lp, dt) {
     const inp = this.input;
-    inp.update();
+    inp.updateMovement();
 
     this.dashCooldown = Math.max(0, this.dashCooldown - dt);
 
@@ -2279,12 +2296,6 @@ class Game {
     }
     if (inp.respawnRequested && this.respawnReady && !this.respawnRequested) {
       this._requestRespawn();
-    }
-    if (inp.weaponNextRequested && (this.gameState === GameState.PLAYING || this.gameState === GameState.TRAINING)) {
-      this._changeWeapon('next');
-    }
-    if (inp.weaponPrevRequested && (this.gameState === GameState.PLAYING || this.gameState === GameState.TRAINING)) {
-      this._changeWeapon('prev');
     }
 
     const mx = inp.moveX;
@@ -2339,7 +2350,6 @@ class Game {
       this.pitch -= inp.lookY * 0.003;
       this.pitch = Math.max(-0.5, Math.min(0.5, this.pitch));
     }
-    inp.resetLook();
 
     if (lp.recoilOffset) {
       lp.rotation -= lp.recoilOffset * dt * 8;
@@ -2364,7 +2374,6 @@ class Game {
         }
       }
     }
-    if (!wp) console.log('[Fire] handleInput: weapon=%s NOT FOUND in WEAPONS', lp.weapon);
     if (shouldFire) {
       const now = Date.now();
       const fireRateMult = this.passiveManager ? this.passiveManager.getFireRateMultiplier(this.localId) : 1;
@@ -2384,6 +2393,8 @@ class Game {
       if (Math.abs(lp.recoilOffset) < recovery) lp.recoilOffset = 0;
       else lp.recoilOffset -= Math.sign(lp.recoilOffset) * recovery;
     }
+
+    inp.endFrame();
   }
 
   _handlePadInteraction(lp, speed, dt) {

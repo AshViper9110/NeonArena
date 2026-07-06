@@ -9,26 +9,17 @@ class InputManager {
     this.firePressed = false;
     this.fireClicked = false;
     this.dashRequested = false;
-    this.jumpRequested = false;
     this.reloadRequested = false;
     this.respawnRequested = false;
-    this.weaponNextRequested = false;
-    this.weaponPrevRequested = false;
     this.canFire = false;
     this.isMobile = this._detectMobile();
 
     this._keys = {};
     this._touchLookId = null;
-    this._touchLookStartX = 0;
-    this._touchLookStartY = 0;
     this._touchLookLastX = 0;
     this._touchLookLastY = 0;
-    this._lookSensitivity = this.isMobile ? 0.005 : 0.003;
-    this._touchFireHeld = false;
     this._joystick = null;
-    this._touchButtons = {};
     this._initialized = false;
-    this._preventNextClick = false;
   }
 
   _detectMobile() {
@@ -48,11 +39,10 @@ class InputManager {
 
     if (this.isMobile) {
       this._setupTouchControls();
-      document.getElementById('touch-controls').style.display = '';
     }
   }
 
-  update() {
+  updateMovement() {
     this.moveX = 0;
     this.moveZ = 0;
 
@@ -71,17 +61,13 @@ class InputManager {
       this.moveX = this._joystick.x;
       this.moveZ = this._joystick.y;
     }
-
-    this.fireClicked = false;
-    this.dashRequested = false;
-    this.jumpRequested = false;
-    this.reloadRequested = false;
-    this.respawnRequested = false;
-    this.weaponNextRequested = false;
-    this.weaponPrevRequested = false;
   }
 
-  resetLook() {
+  endFrame() {
+    this.fireClicked = false;
+    this.dashRequested = false;
+    this.reloadRequested = false;
+    this.respawnRequested = false;
     this.lookX = 0;
     this.lookY = 0;
   }
@@ -166,10 +152,10 @@ class InputManager {
 
     this.canFire = true;
     document.getElementById('instructions').textContent =
-      'JOYSTICK: MOVE · RIGHT DRAG: AIM · FIRE: SHOOT · DASH · JUMP';
+      'JOYSTICK: MOVE · RIGHT DRAG: AIM · FIRE: SHOOT · DASH · R: RELOAD';
     const trainingHint = document.querySelector('.training-hint');
     if (trainingHint) {
-      trainingHint.textContent = 'JOYSTICK: MOVE · RIGHT DRAG: AIM · FIRE: SHOOT · DASH · JUMP';
+      trainingHint.textContent = 'JOYSTICK: MOVE · RIGHT DRAG: AIM · FIRE: SHOOT · DASH · R: RELOAD';
     }
   }
 
@@ -188,11 +174,9 @@ class InputManager {
       zone: document.body,
       size: Math.min(130, window.innerWidth * 0.2),
       threshold: 0.1,
-      onInput: (x, y) => {},
+      onInput: () => {},
       onEnd: () => {},
     });
-    this._joystick.show(0, 0);
-    this._joystick.el.style.display = 'none';
 
     const container = document.getElementById('touch-controls');
     if (container) {
@@ -202,52 +186,33 @@ class InputManager {
     let joystickActive = false;
     let joystickPointerId = null;
 
-    const startJoystick = (e) => {
-      const touch = e.changedTouches ? e.changedTouches[0] : e;
-      if (joystickActive) return;
-      joystickActive = true;
-      joystickPointerId = touch.identifier != null ? touch.identifier : touch.pointerId;
-      const x = touch.clientX;
-      const y = touch.clientY;
-      this._joystick.show(x, y);
-    };
-
-    const moveJoystick = (e) => {
-      if (!joystickActive) return;
-      const touch = Array.from(e.changedTouches || [e]).find(t =>
-        (t.identifier != null ? t.identifier : t.pointerId) === joystickPointerId
-      );
-      if (!touch) return;
-      e.preventDefault();
-      this._joystick._onMove({ clientX: touch.clientX, clientY: touch.clientY });
-    };
-
-    const endJoystick = (e) => {
-      const touch = Array.from(e.changedTouches || [e]).find(t =>
-        (t.identifier != null ? t.identifier : t.pointerId) === joystickPointerId
-      );
-      if (!touch) return;
-      joystickActive = false;
-      joystickPointerId = null;
-      this._joystick.hide();
-    };
-
     document.addEventListener('touchstart', (e) => {
       const touch = e.changedTouches[0];
       if (touch.clientX < window.innerWidth * 0.4) {
-        startJoystick(e);
+        if (joystickActive) return;
+        joystickActive = true;
+        joystickPointerId = touch.identifier;
+        this._joystick.show(touch.clientX, touch.clientY);
       }
     }, { passive: true });
 
     document.addEventListener('touchmove', (e) => {
-      moveJoystick(e);
+      if (!joystickActive) return;
+      const touch = Array.from(e.changedTouches).find(t => t.identifier === joystickPointerId);
+      if (!touch) return;
+      e.preventDefault();
+      this._joystick._onMove({ clientX: touch.clientX, clientY: touch.clientY });
     }, { passive: false });
 
     document.addEventListener('touchend', (e) => {
-      endJoystick(e);
+      const touch = Array.from(e.changedTouches).find(t => t.identifier === joystickPointerId);
+      if (!touch) return;
+      joystickActive = false;
+      joystickPointerId = null;
+      this._joystick.hide();
     }, { passive: true });
 
-    document.addEventListener('touchcancel', (e) => {
+    document.addEventListener('touchcancel', () => {
       if (joystickActive) {
         joystickActive = false;
         joystickPointerId = null;
@@ -260,76 +225,42 @@ class InputManager {
     const container = document.getElementById('touch-controls');
     if (!container) return;
 
-    const btnConfigs = [
+    const buttons = [
       { id: 'touch-fire', label: 'FIRE', cls: 'touch-btn-fire', action: 'fire' },
-      { id: 'touch-jump', label: 'JUMP', cls: 'touch-btn-jump', action: 'jump' },
-      { id: 'touch-reload', label: 'R', cls: 'touch-btn-reload', action: 'reload' },
       { id: 'touch-dash', label: 'DASH', cls: 'touch-btn-dash', action: 'dash' },
-      { id: 'touch-weapon-next', label: '>', cls: 'touch-btn-weapon', action: 'weaponNext' },
-      { id: 'touch-weapon-prev', label: '<', cls: 'touch-btn-weapon', action: 'weaponPrev' },
+      { id: 'touch-reload', label: 'R', cls: 'touch-btn-reload', action: 'reload' },
     ];
 
-    btnConfigs.forEach(cfg => {
+    buttons.forEach(cfg => {
       const btn = document.createElement('button');
       btn.id = cfg.id;
       btn.className = 'touch-btn ' + cfg.cls;
       btn.textContent = cfg.label;
       btn.dataset.action = cfg.action;
       container.appendChild(btn);
-      this._touchButtons[cfg.action] = btn;
 
-      btn.addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        this._handleTouchButtonAction(cfg.action, true);
-      }, { passive: false });
+      const press = () => this._handleTouchAction(cfg.action, true);
+      const release = () => this._handleTouchAction(cfg.action, false);
 
-      btn.addEventListener('touchend', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        if (cfg.action === 'fire') {
-          this._handleTouchButtonAction(cfg.action, false);
-        }
-      }, { passive: false });
-
-      btn.addEventListener('touchcancel', (e) => {
-        if (cfg.action === 'fire') {
-          this.firePressed = false;
-        }
-      }, { passive: true });
-
-      btn.addEventListener('pointerdown', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        this._handleTouchButtonAction(cfg.action, true);
-      });
-
-      btn.addEventListener('pointerup', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        if (cfg.action === 'fire') {
-          this._handleTouchButtonAction(cfg.action, false);
-        }
-      });
-
-      btn.addEventListener('pointercancel', (e) => {
-        if (cfg.action === 'fire') {
-          this.firePressed = false;
-        }
-      });
+      btn.addEventListener('touchstart', (e) => { e.preventDefault(); e.stopPropagation(); press(); }, { passive: false });
+      btn.addEventListener('touchend', (e) => { e.preventDefault(); e.stopPropagation(); release(); }, { passive: false });
+      btn.addEventListener('touchcancel', () => { if (cfg.action === 'fire') this.firePressed = false; }, { passive: true });
+      btn.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); press(); });
+      btn.addEventListener('pointerup', (e) => { e.preventDefault(); e.stopPropagation(); release(); });
+      btn.addEventListener('pointercancel', () => { if (cfg.action === 'fire') this.firePressed = false; });
     });
   }
 
-  _handleTouchButtonAction(action, active) {
+  _handleTouchAction(action, active) {
     switch (action) {
       case 'fire':
         if (active) {
-          this.firePressed = true;
-          this.fireClicked = true;
           if (this.game.respawnReady && !this.game.respawnRequested) {
             this.respawnRequested = true;
-            this.firePressed = false;
+            return;
           }
+          this.firePressed = true;
+          this.fireClicked = true;
         } else {
           this.firePressed = false;
           if (AUDIO && this.game.localPlayer) {
@@ -337,20 +268,11 @@ class InputManager {
           }
         }
         break;
-      case 'jump':
-        if (active) this.jumpRequested = true;
-        break;
-      case 'reload':
-        if (active) this.reloadRequested = true;
-        break;
       case 'dash':
         if (active) this.dashRequested = true;
         break;
-      case 'weaponNext':
-        if (active) this.weaponNextRequested = true;
-        break;
-      case 'weaponPrev':
-        if (active) this.weaponPrevRequested = true;
+      case 'reload':
+        if (active) this.reloadRequested = true;
         break;
     }
   }
@@ -364,8 +286,6 @@ class InputManager {
         this._touchLookId = touch.identifier;
         this._touchLookLastX = touch.clientX;
         this._touchLookLastY = touch.clientY;
-        this._touchLookStartX = touch.clientX;
-        this._touchLookStartY = touch.clientY;
       }
     }, { passive: true });
 

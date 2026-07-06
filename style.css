@@ -2352,7 +2352,7 @@ textarea:focus {
   position: fixed;
   top: 0; left: 0;
   width: 100vw; height: 100vh;
-  z-index: 70;
+  z-index: 45;
   pointer-events: none;
   touch-action: none;
 }
@@ -2369,7 +2369,7 @@ textarea:focus {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 75;
+  z-index: 50;
   -webkit-tap-highlight-color: transparent;
   user-select: none;
 }
@@ -2390,17 +2390,6 @@ textarea:focus {
   background: radial-gradient(circle at 40% 40%, rgba(255,80,80,0.7), rgba(200,0,0,0.5));
   box-shadow: 0 0 30px rgba(255,0,0,0.3);
 }
-
-.touch-btn-jump {
-  bottom: clamp(30px, 6vh, 60px);
-  left: clamp(90px, 18vw, 150px);
-  width: clamp(56px, 11vw, 80px);
-  height: clamp(56px, 11vw, 80px);
-  background: radial-gradient(circle at 40% 40%, rgba(0,240,255,0.3), rgba(0,100,200,0.2));
-  border: 2px solid rgba(0,240,255,0.25);
-  font-size: clamp(0.5em, 1.8vw, 0.7em);
-}
-.touch-btn-jump:active { background: radial-gradient(circle at 40% 40%, rgba(0,240,255,0.5), rgba(0,150,255,0.3)); }
 
 .touch-btn-dash {
   bottom: clamp(100px, 18vh, 160px);
@@ -2424,21 +2413,6 @@ textarea:focus {
   font-family: 'Orbitron', monospace;
 }
 .touch-btn-reload:active { background: rgba(100,100,150,0.4); }
-
-.touch-btn-weapon {
-  top: 50%;
-  transform: translateY(-50%);
-  width: clamp(36px, 7vw, 50px);
-  height: clamp(36px, 7vw, 50px);
-  background: rgba(100,100,150,0.15);
-  border: 1.5px solid rgba(255,255,255,0.1);
-  font-size: clamp(0.7em, 2.2vw, 0.9em);
-  font-family: 'Orbitron', monospace;
-  color: rgba(255,255,255,0.5);
-}
-#touch-weapon-prev { left: clamp(4px, 1vw, 10px); }
-#touch-weapon-next { right: clamp(4px, 1vw, 10px); }
-.touch-btn-weapon:active { background: rgba(100,100,150,0.3); }
 
 .touch-btn-fullscreen {
   top: max(12px, env(safe-area-inset-top, 0px));
@@ -2545,10 +2519,6 @@ textarea:focus {
   .touch-btn-fire {
     width: clamp(60px, 18vw, 70px);
     height: clamp(60px, 18vw, 70px);
-  }
-  .touch-btn-jump {
-    width: clamp(48px, 14vw, 56px);
-    height: clamp(48px, 14vw, 56px);
   }
   .touch-btn-dash {
     width: clamp(48px, 14vw, 56px);
