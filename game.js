@@ -2923,6 +2923,7 @@ class Game {
         this._lastFrameTime = now;
       }
       this._animateFrame();
+      this.animate();
     });
   }
 
