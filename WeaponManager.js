@@ -88,7 +88,6 @@ class WeaponManager {
    */
   isBeamWeapon(id) {
     const w = this.registry.get(id || this._current);
-    );
     return w && w.weaponType === 'beam';
   }
 
