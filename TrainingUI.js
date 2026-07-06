@@ -278,7 +278,13 @@ class TrainingUI {
     }
     this.game.mouseDown = false;
     this.game.mouseClicked = false;
-    if (this.game.input) { this.game.input.firePressed = false; this.game.input.fireClicked = false; }
+    if (this.game.input) {
+      this.game.input.firePressed = false;
+      this.game.input.fireClicked = false;
+      if (this.game.input.ensureMobileUI) {
+        this.game.input.ensureMobileUI();
+      }
+    }
     if (this.game._updateTouchControlsVisibility) this.game._updateTouchControlsVisibility();
     if (AUDIO) AUDIO.play('ui_click');
   }

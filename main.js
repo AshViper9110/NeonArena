@@ -409,10 +409,236 @@ window.addEventListener('orientationchange', () => {
 });
 _checkOrientation();
 
-if (/Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
-    || (navigator.maxTouchPoints > 0 && window.innerWidth < 1024)) {
+var _isMobileDevice = /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+  || (navigator.maxTouchPoints > 0 && window.innerWidth < 1024);
+
+if (_isMobileDevice) {
   document.getElementById('btn-fullscreen').style.display = '';
 }
+
+/* =============================================================
+   モバイルボタンレイアウトエディタ
+   ============================================================= */
+var _layoutEditMode = false;
+var _layoutDragData = null;
+var _layoutDragHandlers = {};
+
+function _isMobile() {
+  return _isMobileDevice || (game.input && game.input.isMobile);
+}
+
+function _getLayoutFromSettings() {
+  const saved = SETTINGS.get('mobileButtonLayout');
+  const def = SettingsManager.DEFAULTS.mobileButtonLayout;
+  return {
+    fire: { ...def.fire, ...(saved && saved.fire ? saved.fire : {}) },
+    dash: { ...def.dash, ...(saved && saved.dash ? saved.dash : {}) },
+    reload: { ...def.reload, ...(saved && saved.reload ? saved.reload : {}) },
+  };
+}
+
+function _applyLayoutToEditor(layout) {
+  ['fire', 'dash', 'reload'].forEach(action => {
+    const cfg = layout[action];
+    if (!cfg) return;
+    const sizeSlider = document.querySelector('.mle-slider[data-btn="' + action + '"][data-prop="size"]');
+    const opSlider = document.querySelector('.mle-slider[data-btn="' + action + '"][data-prop="opacity"]');
+    const sizeVal = document.querySelector('[data-for="' + action + '-size"]');
+    const opVal = document.querySelector('[data-for="' + action + '-opacity"]');
+    if (sizeSlider) { sizeSlider.value = cfg.size; }
+    if (opSlider) { opSlider.value = cfg.opacity; }
+    if (sizeVal) { sizeVal.textContent = cfg.size; }
+    if (opVal) { opVal.textContent = cfg.opacity; }
+  });
+}
+
+function _onLayoutDrag(e, action) {
+  if (!_layoutEditMode) return;
+  e.preventDefault();
+  const btn = e.currentTarget;
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  const clientX = e.clientX || (e.changedTouches && e.changedTouches[0].clientX) || (e.touches && e.touches[0].clientX);
+  const clientY = e.clientY || (e.changedTouches && e.changedTouches[0].clientY) || (e.touches && e.touches[0].clientY);
+  if (clientX == null) return;
+  const btnLeft = parseFloat(btn.style.left) || 0;
+  const btnTop = parseFloat(btn.style.top) || 0;
+  _layoutDragData = {
+    action: action,
+    btn: btn,
+    offsetX: clientX - btnLeft,
+    offsetY: clientY - btnTop,
+  };
+  if (e.pointerId != null) {
+    try { btn.setPointerCapture(e.pointerId); } catch (ex) {}
+  }
+}
+
+function _onLayoutMove(e) {
+  if (!_layoutDragData) return;
+  e.preventDefault();
+  const btn = _layoutDragData.btn;
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  const clientX = e.clientX || (e.changedTouches && e.changedTouches[0].clientX) || (e.touches && e.touches[0].clientX);
+  const clientY = e.clientY || (e.changedTouches && e.changedTouches[0].clientY) || (e.touches && e.touches[0].clientY);
+  if (clientX == null) return;
+  const btnW = btn.offsetWidth || 80;
+  const btnH = btn.offsetHeight || 80;
+  let x = clientX - (_layoutDragData.offsetX || 0);
+  let y = clientY - (_layoutDragData.offsetY || 0);
+  x = Math.max(0, Math.min(w - btnW, x));
+  y = Math.max(0, Math.min(h - btnH, y));
+  btn.style.left = x + 'px';
+  btn.style.top = y + 'px';
+  btn.style.right = '';
+  btn.style.bottom = '';
+}
+
+function _onLayoutDragEnd(e) {
+  if (!_layoutDragData) return;
+  const action = _layoutDragData.action;
+  const btn = _layoutDragData.btn;
+  _layoutDragData = null;
+  if (action === 'fire') console.log('[MobileUI] Fire button moved');
+  else if (action === 'dash') console.log('[MobileUI] Dash button moved');
+  else if (action === 'reload') console.log('[MobileUI] Reload button moved');
+}
+
+function _openLayoutEditor() {
+  if (!_isMobile()) return;
+  _layoutEditMode = true;
+  const layout = _getLayoutFromSettings();
+  _applyLayoutToEditor(layout);
+  document.getElementById('mobile-layout-editor').style.display = '';
+  document.getElementById('mobile-layout-editor').classList.add('dragging-active');
+  game.input.firePressed = false;
+  game.input.fireClicked = false;
+  _bindLayoutDrag();
+  console.log('[MobileUI] Enter edit mode');
+}
+
+function _closeLayoutEditor() {
+  _layoutEditMode = false;
+  _layoutDragData = null;
+  document.getElementById('mobile-layout-editor').style.display = 'none';
+  document.getElementById('mobile-layout-editor').classList.remove('dragging-active');
+  _unbindLayoutDrag();
+}
+
+function _bindLayoutDrag() {
+  _unbindLayoutDrag();
+  ['fire', 'dash', 'reload'].forEach(action => {
+    const btn = document.getElementById('touch-' + action);
+    if (!btn) return;
+    const handler = (e) => _onLayoutDrag(e, action);
+    _layoutDragHandlers[action] = handler;
+    btn.addEventListener('pointerdown', handler);
+    btn.addEventListener('touchstart', handler, { passive: false });
+  });
+  if (!_layoutDragHandlers._move) {
+    _layoutDragHandlers._move = (e) => _onLayoutMove(e);
+    _layoutDragHandlers._end = (e) => _onLayoutDragEnd(e);
+    document.addEventListener('pointermove', _layoutDragHandlers._move);
+    document.addEventListener('touchmove', _layoutDragHandlers._move, { passive: false });
+    document.addEventListener('pointerup', _layoutDragHandlers._end);
+    document.addEventListener('touchend', _layoutDragHandlers._end);
+  }
+}
+
+function _unbindLayoutDrag() {
+  ['fire', 'dash', 'reload'].forEach(action => {
+    const btn = document.getElementById('touch-' + action);
+    if (!btn) return;
+    const handler = _layoutDragHandlers[action];
+    if (handler) {
+      btn.removeEventListener('pointerdown', handler);
+      btn.removeEventListener('touchstart', handler);
+    }
+    delete _layoutDragHandlers[action];
+  });
+}
+
+function _saveLayout() {
+  const layout = _getLayoutFromSettings();
+  ['fire', 'dash', 'reload'].forEach(action => {
+    if (!layout[action]) layout[action] = { x: 50, y: 50, size: 100, opacity: 100 };
+    const btn = document.getElementById('touch-' + action);
+    if (btn) {
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      const btnW = btn.offsetWidth || 80;
+      const btnH = btn.offsetHeight || 80;
+      const left = parseFloat(btn.style.left) || 0;
+      const top = parseFloat(btn.style.top) || 0;
+      layout[action].x = Math.round(((left + btnW / 2) / w) * 100);
+      layout[action].y = Math.round(((top + btnH / 2) / h) * 100);
+    }
+    const sizeSlider = document.querySelector('.mle-slider[data-btn="' + action + '"][data-prop="size"]');
+    const opSlider = document.querySelector('.mle-slider[data-btn="' + action + '"][data-prop="opacity"]');
+    if (sizeSlider) layout[action].size = parseInt(sizeSlider.value);
+    if (opSlider) layout[action].opacity = parseInt(opSlider.value);
+  });
+  SETTINGS.set('mobileButtonLayout', layout);
+  if (game.input && game.input.applyLayout) {
+    game.input.applyLayout();
+  }
+  console.log('[MobileUI] Layout saved');
+  _closeLayoutEditor();
+}
+
+function _resetLayout() {
+  const def = SettingsManager.DEFAULTS.mobileButtonLayout;
+  SETTINGS.set('mobileButtonLayout', {
+    fire: { ...def.fire },
+    dash: { ...def.dash },
+    reload: { ...def.reload },
+  });
+  if (game.input && game.input.applyLayout) {
+    game.input.applyLayout();
+  }
+  _applyLayoutToEditor(SettingsManager.DEFAULTS.mobileButtonLayout);
+  console.log('[MobileUI] Layout reset');
+}
+
+/* ---- Layout edit button ---- */
+document.getElementById('btn-layout-edit').addEventListener('click', () => {
+  if (_isMobile()) {
+    closeSettings();
+    _openLayoutEditor();
+  }
+});
+
+/* ---- Layout editor save/reset/close ---- */
+document.getElementById('mle-save').addEventListener('click', _saveLayout);
+document.getElementById('mle-reset').addEventListener('click', _resetLayout);
+document.getElementById('mle-close').addEventListener('click', _closeLayoutEditor);
+
+/* ---- Reapply layout on resize for responsive positioning ---- */
+window.addEventListener('resize', () => {
+  if (_layoutEditMode) return;
+  if (_isMobile() && game.input && game.input.applyLayout) {
+    game.input.applyLayout();
+  }
+});
+
+/* ---- Per-button size/opacity sliders ---- */
+document.querySelectorAll('.mle-slider').forEach(slider => {
+  slider.addEventListener('input', () => {
+    const btn = slider.dataset.btn;
+    const prop = slider.dataset.prop;
+    const val = slider.value;
+    const display = document.querySelector('[data-for="' + btn + '-' + prop + '"]');
+    if (display) display.textContent = val;
+    const layout = _getLayoutFromSettings();
+    if (!layout[btn]) layout[btn] = { x: 50, y: 50, size: 100, opacity: 100 };
+    layout[btn][prop] = parseInt(val);
+    SETTINGS.set('mobileButtonLayout', layout);
+    if (game.input && game.input.applyLayout) {
+      game.input.applyLayout();
+    }
+  });
+});
 
 window.addEventListener('beforeunload', () => {
   game.network.close();
@@ -427,6 +653,12 @@ window.addEventListener('beforeunload', () => {
     }
     if (game._applyGraphicsSettings) game._applyGraphicsSettings();
     _syncSettingsUI();
+    if (_isMobile()) {
+      if (game.input && game.input.applyLayout) {
+        game.input.applyLayout();
+      }
+      console.log('[MobileUI] Layout loaded');
+    }
   } catch (e) {
     console.warn('[Settings] startup apply error:', e);
   }

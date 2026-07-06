@@ -34,6 +34,12 @@ class SettingsManager {
     showPing: false,
     crosshairSize: 1.0,
     crosshairColor: '#00f0ff',
+
+    mobileButtonLayout: {
+      fire: { x: 85, y: 85, size: 100, opacity: 100 },
+      dash: { x: 15, y: 78, size: 100, opacity: 100 },
+      reload: { x: 15, y: 58, size: 100, opacity: 100 },
+    },
   };
 
   constructor() {

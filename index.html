@@ -169,6 +169,7 @@
         <button class="settings-tab" data-tab="audio">AUDIO</button>
         <button class="settings-tab" data-tab="controls">CONTROLS</button>
         <button class="settings-tab" data-tab="game">GAME</button>
+        <button class="settings-tab" data-tab="mobile">MOBILE</button>
       </div>
       <div class="settings-scroll">
 
@@ -391,10 +392,118 @@
           </div>
         </div>
 
+        <!-- ===== MOBILE ===== -->
+        <div class="settings-tab-content" id="settings-mobile">
+          <div class="settings-section-title">モバイル操作設定</div>
+          <div class="settings-row">
+            <span class="settings-label">視点感度</span>
+            <div class="settings-slider-group">
+              <input type="range" class="settings-slider" data-key="mobileSensitivity" min="0.1" max="3.0" step="0.05">
+              <span class="settings-value" data-for="mobileSensitivity">1.00</span>
+            </div>
+          </div>
+          <div class="settings-row">
+            <span class="settings-label">ADS感度</span>
+            <div class="settings-slider-group">
+              <input type="range" class="settings-slider" data-key="adsSensitivity" min="0.1" max="1.5" step="0.05">
+              <span class="settings-value" data-for="adsSensitivity">0.50</span>
+            </div>
+          </div>
+          <div class="settings-row">
+            <span class="settings-label">ジョイスティックサイズ</span>
+            <div class="settings-slider-group">
+              <input type="range" class="settings-slider" data-key="joystickSize" min="80" max="200" step="5">
+              <span class="settings-value" data-for="joystickSize">130</span>
+            </div>
+          </div>
+          <div class="settings-row">
+            <span class="settings-label">ジョイスティック透明度</span>
+            <div class="settings-slider-group">
+              <input type="range" class="settings-slider" data-key="joystickOpacity" min="20" max="100" step="5">
+              <span class="settings-value" data-for="joystickOpacity">100%</span>
+            </div>
+          </div>
+          <div class="settings-row">
+            <span class="settings-label">左右反転</span>
+            <label class="settings-toggle">
+              <input type="checkbox" data-key="invertLookX">
+              <span class="toggle-track"><span class="toggle-knob"></span></span>
+            </label>
+          </div>
+          <div class="settings-row">
+            <span class="settings-label">上下反転(スマホ)</span>
+            <label class="settings-toggle">
+              <input type="checkbox" data-key="invertLookYMobile">
+              <span class="toggle-track"><span class="toggle-knob"></span></span>
+            </label>
+          </div>
+          <div class="settings-section-title" style="margin-top:24px;">ボタンレイアウト</div>
+          <p style="color:#888;font-size:0.7em;margin:0 0 12px 0;line-height:1.6;">
+            各ボタンの位置・サイズ・透明度を自由にカスタマイズできます。<br>
+            編集中はゲーム操作が無効になります。
+          </p>
+          <button class="btn btn-primary btn-small" id="btn-layout-edit">📱 レイアウト編集</button>
+        </div>
+
       </div>
       <div class="settings-actions">
         <button class="btn btn-small btn-secondary" id="btn-settings-reset">↺ 初期化</button>
         <button class="btn btn-small" id="btn-settings-close">CLOSE</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== レイアウトエディタ（スマホのみ） ========== -->
+  <div id="mobile-layout-editor" style="display:none;">
+    <div id="mle-backdrop"></div>
+    <div id="mle-panel">
+      <div class="mle-header">ボタンレイアウト編集</div>
+      <div class="mle-hint">各ボタンをドラッグして自由に配置</div>
+      <div id="mle-controls">
+        <div class="mle-btn-control" data-btn="fire">
+          <span class="mle-btn-label mle-btn-label-fire">🔥 射撃</span>
+          <div class="mle-slider-row">
+            <span class="mle-slider-label">サイズ</span>
+            <input type="range" class="mle-slider" data-btn="fire" data-prop="size" min="50" max="200" step="5">
+            <span class="mle-slider-val" data-for="fire-size">100</span>
+          </div>
+          <div class="mle-slider-row">
+            <span class="mle-slider-label">透明度</span>
+            <input type="range" class="mle-slider" data-btn="fire" data-prop="opacity" min="0" max="100" step="5">
+            <span class="mle-slider-val" data-for="fire-opacity">100</span>
+          </div>
+        </div>
+        <div class="mle-btn-control" data-btn="dash">
+          <span class="mle-btn-label mle-btn-label-dash">💨 ダッシュ</span>
+          <div class="mle-slider-row">
+            <span class="mle-slider-label">サイズ</span>
+            <input type="range" class="mle-slider" data-btn="dash" data-prop="size" min="50" max="200" step="5">
+            <span class="mle-slider-val" data-for="dash-size">100</span>
+          </div>
+          <div class="mle-slider-row">
+            <span class="mle-slider-label">透明度</span>
+            <input type="range" class="mle-slider" data-btn="dash" data-prop="opacity" min="0" max="100" step="5">
+            <span class="mle-slider-val" data-for="dash-opacity">100</span>
+          </div>
+        </div>
+        <div class="mle-btn-control" data-btn="reload">
+          <span class="mle-btn-label mle-btn-label-reload">🔄 リロード</span>
+          <div class="mle-slider-row">
+            <span class="mle-slider-label">サイズ</span>
+            <input type="range" class="mle-slider" data-btn="reload" data-prop="size" min="50" max="200" step="5">
+            <span class="mle-slider-val" data-for="reload-size">100</span>
+          </div>
+          <div class="mle-slider-row">
+            <span class="mle-slider-label">透明度</span>
+            <input type="range" class="mle-slider" data-btn="reload" data-prop="opacity" min="0" max="100" step="5">
+            <span class="mle-slider-val" data-for="reload-opacity">100</span>
+          </div>
+        </div>
+      </div>
+      <div class="mle-actions">
+        <button class="btn btn-primary btn-small" id="mle-save">💾 保存</button>
+        <button class="btn btn-secondary btn-small" id="mle-reset">↺ デフォルトに戻す</button>
+        <button class="btn btn-small" id="mle-close">閉じる</button>
       </div>
     </div>
   </div>

@@ -116,6 +116,12 @@ class Game {
       case GameState.PLAYING:
         document.getElementById('hud').style.display = '';
         document.getElementById('instructions').classList.remove('hidden');
+        if (this.input && this.input.ensureMobileUI) {
+          this.input.ensureMobileUI();
+          if (this.input.isMobile) {
+            console.log('[Mobile] HUD created');
+          }
+        }
         this._updateTouchControlsVisibility();
         break;
       case GameState.RESULT:
@@ -138,6 +144,9 @@ class Game {
         document.getElementById('hud').style.display = 'none';
         document.getElementById('instructions').classList.add('hidden');
         this._enterTraining();
+        if (this.input && this.input.ensureMobileUI) {
+          this.input.ensureMobileUI();
+        }
         this._updateTouchControlsVisibility();
         break;
     }
@@ -195,10 +204,19 @@ class Game {
     if (!tc) return;
     if (!this.input || !this.input.isMobile) { tc.style.display = 'none'; return; }
     if (this.gameState === GameState.PLAYING) {
-      tc.style.display = '';
+      if (this.input._enforceTouchVisibility) {
+        this.input._enforceTouchVisibility(true);
+      } else {
+        tc.style.display = '';
+      }
     } else if (this.gameState === GameState.TRAINING) {
       const panel = document.getElementById('training-left-panel');
-      tc.style.display = (panel && !panel.classList.contains('closed')) ? 'none' : '';
+      const visible = !(panel && !panel.classList.contains('closed'));
+      if (this.input._enforceTouchVisibility) {
+        this.input._enforceTouchVisibility(visible);
+      } else {
+        tc.style.display = visible ? '' : 'none';
+      }
     } else {
       tc.style.display = 'none';
     }
@@ -419,6 +437,13 @@ class Game {
 
     this.trainingUI = new TrainingUI(this);
     this.trainingUI.init();
+
+    if (this.input && this.input.ensureMobileUI) {
+      this.input.ensureMobileUI();
+      if (this.input.isMobile) {
+        console.log('[Mobile] HUD created');
+      }
+    }
 
     if (document.pointerLockElement) document.exitPointerLock();
     this.pointerLocked = false;
@@ -883,6 +908,10 @@ class Game {
           this.matchStats.killStreaks.set(this.network.myId, 0);
           lp.currentKillStreak = 0;
         }
+        if (this.input && this.input.ensureMobileUI) {
+          this.input.ensureMobileUI();
+        }
+        this._updateTouchControlsVisibility();
       }
     }
     if (this.effectManager && data.pos) {
@@ -2586,6 +2615,10 @@ class Game {
     if (this.effectManager) {
       this.effectManager.spawnRespawnEffect(spawnPos, lp.color);
     }
+    if (this.input && this.input.ensureMobileUI) {
+      this.input.ensureMobileUI();
+    }
+    this._updateTouchControlsVisibility();
     const msg = {
       type: 'respawn', id: this.network.myId,
       pos: { x: spawnPos.x, y: 0, z: spawnPos.z },

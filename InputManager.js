@@ -20,6 +20,8 @@ class InputManager {
     this._touchLookLastY = 0;
     this._joystick = null;
     this._initialized = false;
+    this._touchControlsCreated = false;
+    this._touchButtonRefs = {};
   }
 
   _detectMobile() {
@@ -37,8 +39,84 @@ class InputManager {
     this._setupPointerLock();
     this._setupResize();
 
+    this.isMobile = this._detectMobile();
     if (this.isMobile) {
+      console.log('[Mobile] Device detected');
       this._setupTouchControls();
+      this._touchControlsCreated = true;
+    }
+  }
+
+  ensureMobileUI() {
+    this.isMobile = this._detectMobile();
+    if (!this.isMobile) return false;
+
+    console.log('[Mobile] Device detected');
+
+    if (!this._touchControlsCreated) {
+      console.log('[Mobile] Creating mobile controls...');
+      this._cleanupTouchButtons();
+      this._setupTouchControls();
+      this._touchControlsCreated = true;
+    }
+
+    this._enforceTouchVisibility(true);
+    console.log('[Mobile] Touch UI visible');
+
+    this.canFire = true;
+    console.log('[Mobile] Input bound');
+
+    return true;
+  }
+
+  destroyMobileUI() {
+    if (this._joystick) {
+      this._joystick.destroy();
+      this._joystick = null;
+    }
+    this._cleanupTouchButtons();
+    const tc = document.getElementById('touch-controls');
+    if (tc) {
+      tc.innerHTML = '';
+      tc.style.display = 'none';
+      tc.style.visibility = '';
+      tc.style.opacity = '';
+      tc.style.pointerEvents = '';
+    }
+    this._touchControlsCreated = false;
+  }
+
+  _cleanupTouchButtons() {
+    const tc = document.getElementById('touch-controls');
+    if (!tc) return;
+    const existing = tc.querySelectorAll('.touch-btn');
+    existing.forEach(btn => btn.remove());
+    this._touchButtonRefs = {};
+  }
+
+  _enforceTouchVisibility(visible) {
+    const tc = document.getElementById('touch-controls');
+    if (!tc) return;
+    if (visible) {
+      tc.style.display = '';
+      tc.style.visibility = 'visible';
+      tc.style.opacity = '1';
+      tc.style.pointerEvents = 'none';
+      this._refreshButtonRefs();
+      Object.values(this._touchButtonRefs).forEach(btn => {
+        if (!btn) return;
+        btn.style.display = '';
+        btn.style.visibility = 'visible';
+        btn.style.pointerEvents = 'auto';
+      });
+      this.applyLayout();
+      if (this._joystick && this._joystick.el) {
+        this._joystick.el.style.display = '';
+        this._joystick.el.style.visibility = 'visible';
+        this._joystick.el.style.pointerEvents = 'auto';
+      }
+    } else {
+      tc.style.display = 'none';
     }
   }
 
@@ -153,6 +231,7 @@ class InputManager {
   }
 
   _setupTouchControls() {
+    this._cleanupTouchButtons();
     this._createJoystick();
     this._createTouchButtons();
     this._setupTouchLook();
@@ -168,6 +247,8 @@ class InputManager {
   }
 
   _preventScroll() {
+    if (this._scrollPrevented) return;
+    this._scrollPrevented = true;
     document.addEventListener('touchmove', (e) => {
       if (e.target.closest('#touch-controls') || e.target.closest('.virtual-joystick')) {
         e.preventDefault();
@@ -178,6 +259,10 @@ class InputManager {
   }
 
   _createJoystick() {
+    if (this._joystick) {
+      this._joystick.destroy();
+      this._joystick = null;
+    }
     const jsSize = Math.min(SETTINGS.get('joystickSize'), window.innerWidth * 0.25);
     this._joystick = new VirtualJoystick({
       zone: document.body,
@@ -239,7 +324,10 @@ class InputManager {
   _createTouchButtons() {
     const container = document.getElementById('touch-controls');
     if (!container) return;
-    const btnScale = SETTINGS.get('buttonSize') / 100;
+    if (container.querySelector('#touch-fire')) {
+      this._refreshButtonRefs();
+      return;
+    }
 
     const buttons = [
       { id: 'touch-fire', label: 'FIRE', cls: 'touch-btn-fire', action: 'fire' },
@@ -260,11 +348,47 @@ class InputManager {
 
       btn.addEventListener('touchstart', (e) => { e.preventDefault(); e.stopPropagation(); press(); }, { passive: false });
       btn.addEventListener('touchend', (e) => { e.preventDefault(); e.stopPropagation(); release(); }, { passive: false });
-      btn.style.transform = 'scale(' + btnScale + ')';
       btn.addEventListener('touchcancel', () => { if (cfg.action === 'fire') this.firePressed = false; }, { passive: true });
       btn.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); press(); });
       btn.addEventListener('pointerup', (e) => { e.preventDefault(); e.stopPropagation(); release(); });
       btn.addEventListener('pointercancel', () => { if (cfg.action === 'fire') this.firePressed = false; });
+    });
+
+    this._refreshButtonRefs();
+    this.applyLayout();
+  }
+
+  _refreshButtonRefs() {
+    this._touchButtonRefs = {};
+    ['fire', 'dash', 'reload'].forEach(action => {
+      const el = document.getElementById('touch-' + action);
+      if (el) this._touchButtonRefs[action] = el;
+    });
+  }
+
+  applyLayout() {
+    const layout = SETTINGS.get('mobileButtonLayout');
+    if (!layout) return;
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    Object.keys(layout).forEach(action => {
+      const cfg = layout[action];
+      const btn = this._touchButtonRefs[action];
+      if (!btn) return;
+      const xPct = Math.max(0, Math.min(100, cfg.x));
+      const yPct = Math.max(0, Math.min(100, cfg.y));
+      const sizeScale = (cfg.size || 100) / 100;
+      const opacity = Math.max(0, Math.min(100, cfg.opacity || 100)) / 100;
+      const btnW = btn.offsetWidth || 80;
+      const btnH = btn.offsetHeight || 80;
+      const px = (w * xPct / 100) - btnW / 2;
+      const py = (h * yPct / 100) - btnH / 2;
+      btn.style.left = Math.max(0, Math.min(w - btnW, px)) + 'px';
+      btn.style.top = Math.max(0, Math.min(h - btnH, py)) + 'px';
+      btn.style.right = '';
+      btn.style.bottom = '';
+      btn.style.transform = 'scale(' + sizeScale + ')';
+      btn.style.opacity = String(opacity);
     });
   }
 
@@ -295,6 +419,8 @@ class InputManager {
   }
 
   _setupTouchLook() {
+    if (this._touchLookBound) return;
+    this._touchLookBound = true;
     const canvas = this.game.renderer.domElement;
 
     canvas.addEventListener('touchstart', (e) => {
@@ -337,5 +463,9 @@ class InputManager {
       this._joystick.destroy();
       this._joystick = null;
     }
+    this._touchControlsCreated = false;
+    this._touchLookBound = false;
+    this._scrollPrevented = false;
+    this._touchButtonRefs = {};
   }
 }
