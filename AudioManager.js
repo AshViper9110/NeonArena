@@ -7,7 +7,7 @@ class AudioManager {
     this._initialized = false;
     this._noiseBuffer = null;
     this._activeBeamHums = new Map();
-    this._volume = { master: 1, ui: 0.7, weapon: 0.6, explosion: 0.8, player: 0.6, environment: 0.5, voice: 0.7 };
+    this._volume = { master: 1, ui: 0.7, weapon: 0.6, explosion: 0.8, player: 0.6, environment: 0.5, voice: 0.7, bgm: 0.7 };
     this._savedVolume = null;
   }
 
@@ -19,7 +19,7 @@ class AudioManager {
       this.masterGain.gain.value = 1;
       this.masterGain.connect(this.ctx.destination);
 
-      for (const cat of ['master', 'ui', 'weapon', 'explosion', 'player', 'environment', 'voice']) {
+      for (const cat of ['master', 'ui', 'weapon', 'explosion', 'player', 'environment', 'voice', 'bgm']) {
         const gain = this.ctx.createGain();
         gain.gain.value = this._volume[cat] || 1;
         gain.connect(this.masterGain);

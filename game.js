@@ -76,6 +76,11 @@ class Game {
     this.trainingUI = null;
     this.input = null;
     this.pitch = 0;
+    this._showFps = false;
+    this._fpsTimer = 0;
+    this._fpsCount = 0;
+    this._fpsLimit = 0;
+    this._lastFrameTime = 0;
   }
 
   get localPlayer() { return this.players.get(this.localId); }
@@ -157,7 +162,8 @@ class Game {
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x0a0a12);
     this.scene.fog = new THREE.Fog(0x0a0a12, 20, 40);
-    this.camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 100);
+    const defaultFov = SETTINGS.get('fov');
+    this.camera = new THREE.PerspectiveCamera(defaultFov, window.innerWidth / window.innerHeight, 0.1, 100);
     this.renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: 'high-performance' });
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
@@ -219,6 +225,25 @@ class Game {
       h.position.copy(l.position);
       this.scene.add(h);
     });
+  }
+
+  _applyGraphicsSettings() {
+    const s = SETTINGS.getAll();
+    const dpr = Math.min(window.devicePixelRatio, s.resolutionScale / 100 * 2);
+    const pixelRatio = s.graphicsQuality === 'low' ? Math.min(dpr, 1) :
+      s.graphicsQuality === 'medium' ? Math.min(dpr, 1.5) :
+      Math.min(dpr, 2);
+    this.renderer.setPixelRatio(Math.max(0.5, pixelRatio));
+    this.renderer.setSize(window.innerWidth, window.innerHeight);
+
+    this.renderer.shadowMap.enabled = s.shadows;
+    if (s.shadows) {
+      this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    }
+
+    if (this._fpsLimit !== s.fpsLimit) {
+      this._fpsLimit = s.fpsLimit;
+    }
   }
 
   _clearArena() {
@@ -2888,9 +2913,35 @@ class Game {
      ゲームループ
      ---------------------------------------------------------- */
   animate() {
-    requestAnimationFrame(() => this.animate());
+    requestAnimationFrame((now) => {
+      if (this._fpsLimit > 0) {
+        const minInterval = 1000 / this._fpsLimit;
+        if (this._lastFrameTime && (now - this._lastFrameTime) < minInterval) {
+          this.animate();
+          return;
+        }
+        this._lastFrameTime = now;
+      }
+      this._animateFrame();
+    });
+  }
+
+  _animateFrame() {
     const dt = Math.min(this.clock.getDelta(), 0.05);
     this.update(dt);
+
+    if (this._showFps) {
+      this._fpsTimer += dt;
+      this._fpsCount++;
+      if (this._fpsTimer >= 0.5) {
+        const fps = Math.round(this._fpsCount / this._fpsTimer);
+        const el = document.getElementById('fps-counter');
+        if (el) el.textContent = fps + ' FPS';
+        this._fpsTimer = 0;
+        this._fpsCount = 0;
+      }
+    }
+
     this.renderer.render(this.scene, this.camera);
   }
 }

@@ -116,8 +116,10 @@ class InputManager {
     });
     document.addEventListener('mousemove', (e) => {
       if (this.game.pointerLocked) {
-        this.lookX += e.movementX;
-        this.lookY += e.movementY;
+        const sens = SETTINGS.get('mouseSensitivity');
+        const invertY = SETTINGS.get('invertY') ? -1 : 1;
+        this.lookX += e.movementX * sens;
+        this.lookY += e.movementY * sens * invertY;
       }
     });
   }
@@ -170,9 +172,10 @@ class InputManager {
   }
 
   _createJoystick() {
+    const jsSize = Math.min(SETTINGS.get('joystickSize'), window.innerWidth * 0.25);
     this._joystick = new VirtualJoystick({
       zone: document.body,
-      size: Math.min(130, window.innerWidth * 0.2),
+      size: jsSize,
       threshold: 0.1,
       onInput: () => {},
       onEnd: () => {},
@@ -182,6 +185,7 @@ class InputManager {
     if (container) {
       container.appendChild(this._joystick.el);
     }
+    this._joystick.el.style.opacity = (SETTINGS.get('joystickOpacity') / 100);
 
     let joystickActive = false;
     let joystickPointerId = null;
@@ -229,6 +233,7 @@ class InputManager {
   _createTouchButtons() {
     const container = document.getElementById('touch-controls');
     if (!container) return;
+    const btnScale = SETTINGS.get('buttonSize') / 100;
 
     const buttons = [
       { id: 'touch-fire', label: 'FIRE', cls: 'touch-btn-fire', action: 'fire' },
@@ -249,6 +254,7 @@ class InputManager {
 
       btn.addEventListener('touchstart', (e) => { e.preventDefault(); e.stopPropagation(); press(); }, { passive: false });
       btn.addEventListener('touchend', (e) => { e.preventDefault(); e.stopPropagation(); release(); }, { passive: false });
+      btn.style.transform = 'scale(' + btnScale + ')';
       btn.addEventListener('touchcancel', () => { if (cfg.action === 'fire') this.firePressed = false; }, { passive: true });
       btn.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); press(); });
       btn.addEventListener('pointerup', (e) => { e.preventDefault(); e.stopPropagation(); release(); });
@@ -298,8 +304,11 @@ class InputManager {
       const touch = Array.from(e.changedTouches).find(t => t.identifier === this._touchLookId);
       if (!touch) return;
       e.preventDefault();
-      const dx = touch.clientX - this._touchLookLastX;
-      const dy = touch.clientY - this._touchLookLastY;
+      const sens = SETTINGS.get('mobileSensitivity');
+      const invertX = SETTINGS.get('invertLookX') ? -1 : 1;
+      const invertY = SETTINGS.get('invertLookYMobile') ? -1 : 1;
+      const dx = (touch.clientX - this._touchLookLastX) * sens * invertX;
+      const dy = (touch.clientY - this._touchLookLastY) * sens * invertY;
       this.lookX += dx;
       this.lookY += dy;
       this._touchLookLastX = touch.clientX;

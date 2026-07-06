@@ -1,24 +1,16 @@
-/* ============================================================
-   NEON ARENA - エントリーポイント
-   UIイベントバインディング（ゲームロジックはgame.jsに委譲）
-   ============================================================ */
-
 const game = new Game();
 game.init();
 
-/* ---- タイトル画面 ---- */
-
-/* UI Sounds Helper */
 function _uiSound(name) {
   return () => { if (AUDIO) AUDIO.play(name); };
 }
 
-/* Hover sounds for buttons */
 document.querySelectorAll('.btn, .ws-btn, .ms-btn').forEach(el => {
   el.addEventListener('mouseenter', _uiSound('ui_hover'));
 });
 
-/* Host */
+/* ---- タイトル画面 ---- */
+
 document.getElementById('btn-host').addEventListener('click', async () => {
   const name = document.getElementById('player-name-input').value.trim() || 'Player';
   document.getElementById('title-status').textContent = '⏳ Creating room...';
@@ -47,7 +39,6 @@ document.getElementById('btn-host').addEventListener('click', async () => {
   }
 });
 
-/* Join */
 document.getElementById('btn-join').addEventListener('click', () => {
   document.getElementById('join-section').style.display = '';
   document.getElementById('host-section').style.display = 'none';
@@ -73,7 +64,6 @@ document.getElementById('btn-join-room').addEventListener('click', async () => {
   }
 });
 
-/* 名前変更（常時可能） */
 document.getElementById('player-name-input').addEventListener('input', () => {
   const name = document.getElementById('player-name-input').value.trim() || 'Player';
   const me = game.players.get(game.localId);
@@ -84,9 +74,14 @@ document.getElementById('player-name-input').addEventListener('input', () => {
   }
 });
 
+/* ---- タイトル画面: Settings ---- */
+document.getElementById('btn-title-settings').addEventListener('click', () => {
+  _uiSound('ui_click')();
+  document.getElementById('settings-panel').style.display = 'flex';
+});
+
 /* ---- ロビー ---- */
 
-/* ホスト: ゲーム開始 */
 document.getElementById('btn-start-game').addEventListener('click', () => {
   if (document.getElementById('btn-start-game').disabled) return;
   _uiSound('ui_start')();
@@ -95,7 +90,6 @@ document.getElementById('btn-start-game').addEventListener('click', () => {
   game.setState(GameState.COUNTDOWN);
 });
 
-/* クライアント: Ready */
 document.getElementById('btn-ready').addEventListener('click', () => {
   const btn = document.getElementById('btn-ready');
   const isReady = btn.dataset.ready !== 'true';
@@ -108,7 +102,6 @@ document.getElementById('btn-ready').addEventListener('click', () => {
   game._updateLobbyUI();
 });
 
-/* 武器変更（左右矢印） */
 function setupWeaponNav(containerId) {
   const container = document.getElementById(containerId);
   if (!container) return;
@@ -135,7 +128,6 @@ function setupPassiveNav(containerId) {
 setupPassiveNav('lobby-passive-selector');
 setupPassiveNav('death-passive-selector');
 
-/* リスポーンボタン */
 document.getElementById('respawn-btn').addEventListener('click', () => {
   if (game.respawnReady && !game.respawnRequested) {
     _uiSound('ui_click')();
@@ -143,7 +135,6 @@ document.getElementById('respawn-btn').addEventListener('click', () => {
   }
 });
 
-/* マップ変更（左右矢印 / Hostのみ） */
 document.getElementById('map-prev').addEventListener('click', () => {
   if (game.network.isHost) game._changeMap('prev');
 });
@@ -151,7 +142,6 @@ document.getElementById('map-next').addEventListener('click', () => {
   if (game.network.isHost) game._changeMap('next');
 });
 
-/* ルームIDコピー（タイトル画面） */
 document.getElementById('btn-copy-room').addEventListener('click', () => {
   _uiSound('ui_copy')();
   const text = document.getElementById('room-id-display').textContent;
@@ -159,7 +149,6 @@ document.getElementById('btn-copy-room').addEventListener('click', () => {
   document.getElementById('title-status').textContent = '✅ Copied!';
 });
 
-/* ルームIDコピー（ロビー画面） */
 document.getElementById('lobby-copy-room').addEventListener('click', () => {
   _uiSound('ui_copy')();
   const text = document.getElementById('lobby-room-id').textContent;
@@ -183,7 +172,6 @@ document.getElementById('btn-training').addEventListener('click', () => {
   game.setState(GameState.TRAINING);
 });
 
-/* ロビー退出 */
 document.getElementById('btn-leave-lobby').addEventListener('click', () => {
   game.network.close();
   game.connectionHandled = false;
@@ -201,28 +189,200 @@ document.getElementById('btn-leave-lobby').addEventListener('click', () => {
   game.setState(GameState.TITLE);
 });
 
-/* === Settings Panel Toggle === */
-document.getElementById('btn-settings').addEventListener('click', () => {
-  document.getElementById('settings-panel').style.display = 'flex';
+/* ---- Settings Panel ---- */
+
+const settingsPanel = document.getElementById('settings-panel');
+const settingsInner = document.getElementById('settings-inner');
+
+function openSettings() {
+  settingsPanel.style.display = 'flex';
   _uiSound('ui_click')();
-});
-document.getElementById('btn-settings-close').addEventListener('click', () => {
-  document.getElementById('settings-panel').style.display = 'none';
+  _syncSettingsUI();
+}
+
+function closeSettings() {
+  settingsPanel.style.display = 'none';
   _uiSound('ui_click')();
-});
-/* Volume sliders */
-function setupSlider(id, category) {
-  const slider = document.getElementById(id);
-  slider.addEventListener('input', () => {
-    const val = parseInt(slider.value) / 100;
-    if (AUDIO) AUDIO.setVolume(category, val);
+}
+
+function _syncSettingsUI() {
+  const all = SETTINGS.getAll();
+  document.querySelectorAll('[data-key]').forEach(el => {
+    const key = el.dataset.key;
+    const val = all[key];
+    if (el.type === 'checkbox') {
+      el.checked = !!val;
+    } else if (el.tagName === 'SELECT') {
+      el.value = String(val);
+    } else if (el.type === 'color') {
+      el.value = val || '#00f0ff';
+    } else if (el.type === 'range') {
+      el.value = val;
+      const display = document.querySelector(`.settings-value[data-for="${key}"]`);
+      if (display) {
+        if (key === 'resolutionScale' || key === 'joystickOpacity' || key === 'masterVolume' || key === 'bgmVolume' || key === 'seVolume' || key === 'voiceVolume') {
+          display.textContent = val + '%';
+        } else if (key === 'uiScale' || key === 'mouseSensitivity' || key === 'mobileSensitivity' || key === 'aimSensitivityMultiplier' || key === 'adsSensitivity') {
+          display.textContent = Number(val).toFixed(2);
+        } else if (key === 'crosshairSize') {
+          display.textContent = Number(val).toFixed(1);
+        } else {
+          display.textContent = val;
+        }
+      }
+    }
   });
 }
-setupSlider('vol-master', 'master');
-setupSlider('vol-weapon', 'weapon');
-setupSlider('vol-ui', 'ui');
-setupSlider('vol-explosion', 'explosion');
-setupSlider('vol-player', 'player');
+
+document.querySelectorAll('[data-key]').forEach(el => {
+  el.addEventListener('input', () => {
+    const key = el.dataset.key;
+    let val;
+    if (el.type === 'checkbox') {
+      val = el.checked;
+    } else if (el.type === 'number') {
+      val = parseFloat(el.value);
+    } else {
+      val = el.value;
+    }
+    if (el.type === 'range') val = parseFloat(el.value);
+    SETTINGS.set(key, val);
+    _applySetting(key, val);
+  });
+  el.addEventListener('change', () => {
+    const key = el.dataset.key;
+    let val;
+    if (el.type === 'checkbox') {
+      val = el.checked;
+    } else {
+      val = el.value;
+    }
+    if (el.type === 'range') val = parseFloat(el.value);
+    SETTINGS.set(key, val);
+    _applySetting(key, val);
+  });
+});
+
+function _applySetting(key, val) {
+  switch (key) {
+    case 'masterVolume':
+      if (AUDIO) AUDIO.setVolume('master', val / 100);
+      break;
+    case 'bgmVolume':
+      if (AUDIO) AUDIO.setVolume('bgm', val / 100);
+      break;
+    case 'seVolume':
+      if (AUDIO) {
+        AUDIO.setVolume('ui', val / 100);
+        AUDIO.setVolume('weapon', val / 100);
+        AUDIO.setVolume('explosion', val / 100);
+        AUDIO.setVolume('player', val / 100);
+      }
+      break;
+    case 'voiceVolume':
+      if (AUDIO) AUDIO.setVolume('voice', val / 100);
+      break;
+    case 'fov':
+      if (game.camera) game.camera.fov = Number(val);
+      if (game.camera) game.camera.updateProjectionMatrix();
+      break;
+    case 'crosshairSize': {
+      const ch = document.getElementById('crosshair');
+      if (ch) ch.style.transform = `translate(-50%, -50%) scale(${val})`;
+      break;
+    }
+    case 'crosshairColor': {
+      const ch = document.getElementById('crosshair');
+      if (ch) ch.style.setProperty('--ch-color', val);
+      const dot = document.getElementById('crosshair-dot');
+      if (dot) dot.style.background = val;
+      break;
+    }
+    case 'showFps': {
+      let fpsEl = document.getElementById('fps-counter');
+      if (val) {
+        if (!fpsEl) {
+          fpsEl = document.createElement('div');
+          fpsEl.id = 'fps-counter';
+          fpsEl.style.cssText = 'position:fixed;top:10px;right:60px;z-index:60;font-family:Orbitron,monospace;font-size:0.6em;color:#888;pointer-events:none;';
+          document.body.appendChild(fpsEl);
+        }
+        fpsEl.style.display = '';
+        game._showFps = true;
+      } else {
+        if (fpsEl) fpsEl.style.display = 'none';
+        game._showFps = false;
+      }
+      break;
+    }
+    case 'showPing': {
+      let pingEl = document.getElementById('ping-display');
+      if (val) {
+        if (!pingEl) {
+          pingEl = document.createElement('div');
+          pingEl.id = 'ping-display';
+          pingEl.style.cssText = 'position:fixed;top:10px;right:110px;z-index:60;font-family:Orbitron,monospace;font-size:0.6em;color:#888;pointer-events:none;';
+          document.body.appendChild(pingEl);
+        }
+        pingEl.style.display = '';
+      } else {
+        if (pingEl) pingEl.style.display = 'none';
+      }
+      break;
+    }
+    case 'graphicsQuality':
+    case 'resolutionScale':
+    case 'shadows':
+    case 'postEffects':
+    case 'antialias':
+    case 'fpsLimit':
+      if (game._applyGraphicsSettings) game._applyGraphicsSettings();
+      break;
+    case 'uiScale':
+      document.getElementById('hud').style.fontSize = (val * 100) + '%';
+      break;
+    case 'mouseSensitivity':
+    case 'invertY':
+      if (game.input) {
+        game.input._settingsDirty = true;
+      }
+      break;
+    case 'language':
+      break;
+  }
+}
+
+/* ---- Settings: Tab switching ---- */
+document.querySelectorAll('.settings-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.settings-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.querySelectorAll('.settings-tab-content').forEach(c => c.classList.remove('active'));
+    const target = document.getElementById('settings-' + tab.dataset.tab);
+    if (target) target.classList.add('active');
+  });
+});
+
+document.getElementById('btn-settings-close').addEventListener('click', closeSettings);
+
+document.getElementById('btn-settings-reset').addEventListener('click', () => {
+  SETTINGS.reset();
+  _syncSettingsUI();
+  for (const [key, val] of Object.entries(SETTINGS.getAll())) {
+    _applySetting(key, val);
+  }
+  _uiSound('ui_click')();
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && settingsPanel.style.display === 'flex') {
+    closeSettings();
+    e.preventDefault();
+  }
+});
+
+/* ---- Settings from lobby ---- */
+document.getElementById('btn-settings').addEventListener('click', openSettings);
 
 /* ---- フルスクリーン ---- */
 document.getElementById('btn-fullscreen').addEventListener('click', () => {
@@ -249,13 +409,21 @@ window.addEventListener('orientationchange', () => {
 });
 _checkOrientation();
 
-/* モバイル時にフルスクリーンボタンを表示 */
 if (/Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
     || (navigator.maxTouchPoints > 0 && window.innerWidth < 1024)) {
   document.getElementById('btn-fullscreen').style.display = '';
 }
 
-/* ブラウザ終了時 */
 window.addEventListener('beforeunload', () => {
   game.network.close();
 });
+
+/* ---- Apply settings on startup ---- */
+(function applyStartupSettings() {
+  const all = SETTINGS.getAll();
+  for (const [key, val] of Object.entries(all)) {
+    _applySetting(key, val);
+  }
+  if (game._applyGraphicsSettings) game._applyGraphicsSettings();
+  _syncSettingsUI();
+})();
