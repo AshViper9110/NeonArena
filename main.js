@@ -224,6 +224,37 @@ setupSlider('vol-ui', 'ui');
 setupSlider('vol-explosion', 'explosion');
 setupSlider('vol-player', 'player');
 
+/* ---- フルスクリーン ---- */
+document.getElementById('btn-fullscreen').addEventListener('click', () => {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(() => {});
+  } else {
+    document.exitFullscreen().catch(() => {});
+  }
+});
+
+/* ---- 画面向き検出 ---- */
+function _checkOrientation() {
+  const overlay = document.getElementById('orientation-overlay');
+  if (!overlay) return;
+  const isMobile = /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+    || (navigator.maxTouchPoints > 0 && window.innerWidth < 1024);
+  if (!isMobile) { overlay.style.display = 'none'; return; }
+  const isPortrait = window.innerHeight > window.innerWidth;
+  overlay.style.display = isPortrait ? '' : 'none';
+}
+window.addEventListener('resize', _checkOrientation);
+window.addEventListener('orientationchange', () => {
+  setTimeout(_checkOrientation, 300);
+});
+_checkOrientation();
+
+/* モバイル時にフルスクリーンボタンを表示 */
+if (/Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+    || (navigator.maxTouchPoints > 0 && window.innerWidth < 1024)) {
+  document.getElementById('btn-fullscreen').style.display = '';
+}
+
 /* ブラウザ終了時 */
 window.addEventListener('beforeunload', () => {
   game.network.close();

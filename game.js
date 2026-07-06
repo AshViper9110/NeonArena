@@ -74,6 +74,8 @@ class Game {
     this.passiveManager = null;
     this.trainingManager = null;
     this.trainingUI = null;
+    this.input = null;
+    this.pitch = 0;
   }
 
   get localPlayer() { return this.players.get(this.localId); }
@@ -168,7 +170,8 @@ class Game {
     this.passiveManager = new PassiveManager(this);
 
     this._wireReloadCallback();
-    this._setupInputEvents();
+    this.input = new InputManager(this);
+    this.input.init();
     this._setupLights();
     this._createArena(this.selectedMap);
     this.setState(GameState.TITLE);
@@ -176,57 +179,6 @@ class Game {
   }
 
   _setupInputEvents() {
-    window.addEventListener('resize', () => {
-      this.camera.aspect = window.innerWidth / window.innerHeight;
-      this.camera.updateProjectionMatrix();
-      this.renderer.setSize(window.innerWidth, window.innerHeight);
-    });
-    document.addEventListener('pointerlockchange', () => {
-      this.pointerLocked = document.pointerLockElement === this.renderer.domElement;
-      const isTraining = this.gameState === GameState.TRAINING;
-      document.getElementById('instructions').classList.toggle('hidden',
-        !this.pointerLocked || this.respawnTimer > 0 || isTraining);
-    });
-    document.addEventListener('mousemove', (e) => {
-      if (this.pointerLocked) this.mouseDelta += e.movementX;
-    });
-    document.addEventListener('keydown', (e) => {
-      this.keys[e.key.toLowerCase()] = true;
-      if (e.key.toLowerCase() === 'r' && (this.gameState === GameState.PLAYING || this.gameState === GameState.TRAINING)) this.reload();
-      if ((e.key === ' ' || e.key === 'Space') && this.respawnReady && !this.respawnRequested) {
-        e.preventDefault();
-        this._requestRespawn();
-      }
-    });
-    document.addEventListener('keyup', (e) => { this.keys[e.key.toLowerCase()] = false; });
-    this.renderer.domElement.addEventListener('mousedown', (e) => {
-      if (e.button === 0) {
-        if (this.respawnReady && !this.respawnRequested) {
-          this._requestRespawn();
-          return;
-        }
-        if (this.gameState === GameState.TRAINING) {
-          const panel = document.getElementById('training-left-panel');
-          if (panel && !panel.classList.contains('closed')) {
-            return;
-          }
-        }
-        this.mouseDown = true;
-        this.mouseClicked = true;
-        const needsLock = (this.gameState === GameState.PLAYING || this.gameState === GameState.TRAINING);
-        if (!this.pointerLocked && needsLock && !(this.respawnTimer > 0)) {
-          this.renderer.domElement.requestPointerLock();
-        }
-      }
-    });
-    this.renderer.domElement.addEventListener('mouseup', (e) => {
-      if (e.button === 0) {
-        this.mouseDown = false;
-        if (AUDIO && this.localPlayer) {
-          AUDIO.stopBeamHum(this.localPlayer.weapon);
-        }
-      }
-    });
   }
 
   _setupLights() {
@@ -374,6 +326,7 @@ class Game {
     this.gameTimer = CONFIG.gameTimeLimit;
     this.respawnTimer = 0;
     this.invincibleTimer = 0;
+    this.pitch = 0;
   }
 
   _enterTraining() {
@@ -2047,6 +2000,7 @@ class Game {
       if (panel && !panel.classList.contains('closed')) {
         this.mouseDown = false;
         this.mouseClicked = false;
+        if (this.input) { this.input.firePressed = false; this.input.fireClicked = false; }
       }
       this._handlePlayerInput(lp, dt);
     }
@@ -2304,17 +2258,39 @@ class Game {
   }
 
   _handlePlayerInput(lp, dt) {
-    let mx = 0, mz = 0;
-    if (this.keys['w']) mz -= 1;
-    if (this.keys['s']) mz += 1;
-    if (this.keys['a']) mx -= 1;
-    if (this.keys['d']) mx += 1;
+    const inp = this.input;
+    inp.update();
 
     this.dashCooldown = Math.max(0, this.dashCooldown - dt);
 
+    if (inp.dashRequested && this.dashCooldown <= 0 && this.dashTimer <= 0) {
+      this.dashTimer = CONFIG.dashDuration;
+      this.dashCooldown = CONFIG.dashCooldown;
+      this.dashTriggered = true;
+      const fwd = new THREE.Vector3(0, 0, -1)
+        .applyAxisAngle(new THREE.Vector3(0, 1, 0), lp.rotation);
+      if (this.effectManager) this.effectManager.spawnDashEffect(lp.position, fwd);
+      if (this.cameraEffectManager) this.cameraEffectManager.dashFov();
+      if (AUDIO) AUDIO.play('player_dash', { position: lp.position });
+    }
+
+    if (inp.reloadRequested && (this.gameState === GameState.PLAYING || this.gameState === GameState.TRAINING)) {
+      this.reload();
+    }
+    if (inp.respawnRequested && this.respawnReady && !this.respawnRequested) {
+      this._requestRespawn();
+    }
+    if (inp.weaponNextRequested && (this.gameState === GameState.PLAYING || this.gameState === GameState.TRAINING)) {
+      this._changeWeapon('next');
+    }
+    if (inp.weaponPrevRequested && (this.gameState === GameState.PLAYING || this.gameState === GameState.TRAINING)) {
+      this._changeWeapon('prev');
+    }
+
+    const mx = inp.moveX;
+    const mz = inp.moveZ;
+
     if (mx !== 0 || mz !== 0) {
-      const len = Math.sqrt(mx * mx + mz * mz);
-      mx /= len; mz /= len;
       const fwd = new THREE.Vector3(0, 0, -1)
         .applyAxisAngle(new THREE.Vector3(0, 1, 0), lp.rotation);
       const right = new THREE.Vector3(1, 0, 0)
@@ -2323,17 +2299,7 @@ class Game {
       _v3b.copy(right).multiplyScalar(mx);
       _v3.add(_v3b).normalize();
 
-      if (this.keys['shift'] && this.dashCooldown <= 0 && this.dashTimer <= 0) {
-        this.dashTimer = CONFIG.dashDuration;
-        this.dashCooldown = CONFIG.dashCooldown;
-        this.dashTriggered = true;
-        if (this.effectManager) this.effectManager.spawnDashEffect(lp.position, _v3);
-        if (this.cameraEffectManager) this.cameraEffectManager.dashFov();
-        if (AUDIO) AUDIO.play('player_dash', { position: lp.position });
-      }
-
       let speed = CONFIG.playerSpeed * (lp.moveSpeedMult || 1);
-      /* Apply freeze slow from status effects */
       if (lp.statusEffects) {
         for (const se of lp.statusEffects) {
           if (se.type === 'freeze' && se.slowAmount != null) speed *= se.slowAmount;
@@ -2366,10 +2332,15 @@ class Game {
       lp.targetPosition.copy(lp.position);
     }
 
-    if (this.mouseDelta !== 0) {
-      lp.rotation -= this.mouseDelta * 0.003;
-      this.mouseDelta = 0;
+    if (inp.lookX !== 0) {
+      lp.rotation -= inp.lookX * 0.003;
     }
+    if (inp.lookY !== 0) {
+      this.pitch -= inp.lookY * 0.003;
+      this.pitch = Math.max(-0.5, Math.min(0.5, this.pitch));
+    }
+    inp.resetLook();
+
     if (lp.recoilOffset) {
       lp.rotation -= lp.recoilOffset * dt * 8;
     }
@@ -2381,43 +2352,38 @@ class Game {
 
     let shouldFire = false;
     const wp = WEAPONS[lp.weapon];
-    if (wp && this.pointerLocked) {
+    const canFire = this.input.isMobile ? true : this.pointerLocked;
+    if (wp && canFire) {
       if (wp.fireMode === 'Semi' || wp.fireMode === 'Beam') {
-        if (this.mouseClicked) {
+        if (inp.fireClicked) {
           shouldFire = true;
-          this.mouseClicked = false;
         }
       } else {
-        if (this.mouseDown) {
+        if (inp.firePressed) {
           shouldFire = true;
         }
       }
     }
     if (!wp) console.log('[Fire] handleInput: weapon=%s NOT FOUND in WEAPONS', lp.weapon);
-    else if (!this.pointerLocked) console.log('[Fire] handleInput: pointerLocked=false');
-      if (shouldFire) {
-        const now = Date.now();
-        const fireRateMult = this.passiveManager ? this.passiveManager.getFireRateMultiplier(this.localId) : 1;
-        const effectiveInterval = (wp.fireRate * 1000) / fireRateMult;
-        if (now - lp.lastFireTime > effectiveInterval) {
-          lp.lastFireTime = now;
-          this.shoot();
-          /* Recoil */
-          if (wp.recoil > 0) {
-            const recoilMult = this.passiveManager ? this.passiveManager.getMultiplier('recoilMultiplier', this.localId) : 1;
-            const recoilAmount = wp.recoil * (recoilMult != null ? recoilMult : 1) * 0.02;
-            lp.recoilOffset = (lp.recoilOffset || 0) + (recoilAmount + (Math.random() - 0.5) * recoilAmount * 0.5);
-          }
-        } else {
-          console.log('[Fire] handleInput: fire rate blocked (%dms < %dms)', now - lp.lastFireTime, wp.fireRate * 1000);
+    if (shouldFire) {
+      const now = Date.now();
+      const fireRateMult = this.passiveManager ? this.passiveManager.getFireRateMultiplier(this.localId) : 1;
+      const effectiveInterval = (wp.fireRate * 1000) / fireRateMult;
+      if (now - lp.lastFireTime > effectiveInterval) {
+        lp.lastFireTime = now;
+        this.shoot();
+        if (wp.recoil > 0) {
+          const recoilMult = this.passiveManager ? this.passiveManager.getMultiplier('recoilMultiplier', this.localId) : 1;
+          const recoilAmount = wp.recoil * (recoilMult != null ? recoilMult : 1) * 0.02;
+          lp.recoilOffset = (lp.recoilOffset || 0) + (recoilAmount + (Math.random() - 0.5) * recoilAmount * 0.5);
         }
       }
-      /* Recoil recovery */
-      if (lp.recoilOffset) {
-        const recovery = 6 * dt;
-        if (Math.abs(lp.recoilOffset) < recovery) lp.recoilOffset = 0;
-        else lp.recoilOffset -= Math.sign(lp.recoilOffset) * recovery;
-      }
+    }
+    if (lp.recoilOffset) {
+      const recovery = 6 * dt;
+      if (Math.abs(lp.recoilOffset) < recovery) lp.recoilOffset = 0;
+      else lp.recoilOffset -= Math.sign(lp.recoilOffset) * recovery;
+    }
   }
 
   _handlePadInteraction(lp, speed, dt) {
@@ -2524,6 +2490,7 @@ class Game {
     if (this.network.isHost) {
       this.killCamKillerId = null;
       this.mouseDown = false;
+      if (this.input) { this.input.firePressed = false; this.input.fireClicked = false; }
       this.dashTimer = 0;
       this.dashCooldown = 0;
       this.killStreak = 0;
@@ -2558,6 +2525,7 @@ class Game {
     }
     this.mouseDown = false;
     this.mouseClicked = false;
+    if (this.input) { this.input.firePressed = false; this.input.fireClicked = false; }
     console.log('[Respawn] after reset: mouseDown=%s mouseClicked=%s pointerLocked=%s',
       this.mouseDown, this.mouseClicked, this.pointerLocked);
     this.invincibleTimer = CONFIG.invincibleTime;
@@ -2609,12 +2577,14 @@ class Game {
       const lp = this.localPlayer;
       if (lp) {
         const p = lp.position;
-        const dist = 18, height = 14, angle = lp.rotation;
+        const dist = 18, angle = lp.rotation;
+        const pitchAngle = (this.pitch || 0) * 0.5;
+        const height = 14 - Math.sin(pitchAngle) * dist * 0.3;
         const target = new THREE.Vector3(
-          p.x + Math.sin(angle) * dist, p.y + height, p.z + Math.cos(angle) * dist
+          p.x + Math.sin(angle) * dist, p.y + Math.max(2, height), p.z + Math.cos(angle) * dist
         );
         this.camera.position.lerp(target, 1 - Math.exp(-8 * effectiveDt));
-        this.camera.lookAt(p.x, 0.5, p.z);
+        this.camera.lookAt(p.x, 0.5 + Math.sin(pitchAngle) * 2, p.z);
       }
       return;
     }
@@ -2631,12 +2601,14 @@ class Game {
     const lp = this.localPlayer;
     if (!lp) return;
     const p = lp.position;
-    const dist = 18, height = 14, angle = lp.rotation;
+    const dist = 18, angle = lp.rotation;
+    const pitchAngle = (this.pitch || 0) * 0.5;
+    const height = 14 - Math.sin(pitchAngle) * dist * 0.3;
     const target = new THREE.Vector3(
-      p.x + Math.sin(angle) * dist, p.y + height, p.z + Math.cos(angle) * dist
+      p.x + Math.sin(angle) * dist, p.y + Math.max(2, height), p.z + Math.cos(angle) * dist
     );
     this.camera.position.lerp(target, 1 - Math.exp(-8 * effectiveDt));
-    this.camera.lookAt(p.x, 0.5, p.z);
+    this.camera.lookAt(p.x, 0.5 + Math.sin(pitchAngle) * 2, p.z);
 
     if (this.cameraEffectManager && this.cameraEffectManager.getRedFlash() > 0) {
       const redOverlay = document.getElementById('damage-overlay') || (() => {
@@ -2751,6 +2723,7 @@ class Game {
     this.gameOver = true;
     this.gameStarted = false;
     this.mouseDown = false;
+    if (this.input) { this.input.firePressed = false; this.input.fireClicked = false; }
     if (document.pointerLockElement) document.exitPointerLock();
     const sb = this.matchStats ? this.matchStats.getResults() : [];
     if (this.network.isHost) {
@@ -2834,6 +2807,7 @@ class Game {
     this.gameStarted = false;
     this.gameOver = false;
     this.mouseDown = false;
+    if (this.input) { this.input.firePressed = false; this.input.fireClicked = false; }
     this.dashTimer = 0;
     this.dashCooldown = 0;
     this.invincibleTimer = 0;

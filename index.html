@@ -185,6 +185,18 @@
     </div>
   </div>
 
+  <!-- ========== タッチコントロール（スマホのみ） ========== -->
+  <div id="touch-controls" style="display:none;"></div>
+
+  <!-- ========== 向き警告オーバーレイ ========== -->
+  <div id="orientation-overlay" style="display:none;">
+    <div id="orientation-inner">
+      <div id="orientation-icon">📱</div>
+      <div id="orientation-text">横向きでプレイしてください</div>
+      <div id="orientation-sub">Please rotate your device to landscape</div>
+    </div>
+  </div>
+
   <!-- ========== カウントダウンオーバーレイ ========== -->
   <div id="countdown-overlay" style="display:none;">
     <div id="countdown-text"></div>
@@ -233,6 +245,9 @@
   <div id="instructions" class="hidden">
     WASD: MOVE · MOUSE: AIM · LEFT CLICK: SHOOT · SHIFT: DASH · R: RELOAD
   </div>
+
+  <!-- ========== フルスクリーンボタン ========== -->
+  <button id="btn-fullscreen" class="touch-btn touch-btn-fullscreen" style="display:none;">⛶</button>
 
   <!-- ========== デス画面（キルカメラ） ========== -->
   <div id="death-screen">
@@ -431,7 +446,9 @@
   <script src="TrainingTarget.js"></script>
   <script src="TrainingManager.js"></script>
   <script src="TrainingUI.js"></script>
-  <script src="game.js?v=2"></script>
+  <script src="VirtualJoystick.js"></script>
+  <script src="InputManager.js"></script>
+  <script src="game.js?v=3"></script>
   <script src="main.js?v=2"></script>
 </body>
 
