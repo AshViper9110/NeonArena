@@ -118,4 +118,4 @@ class SettingsManager {
   }
 }
 
-const SETTINGS = new SettingsManager();
+var SETTINGS = new SettingsManager();

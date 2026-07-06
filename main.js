@@ -420,10 +420,14 @@ window.addEventListener('beforeunload', () => {
 
 /* ---- Apply settings on startup ---- */
 (function applyStartupSettings() {
-  const all = SETTINGS.getAll();
-  for (const [key, val] of Object.entries(all)) {
-    _applySetting(key, val);
+  try {
+    const all = SETTINGS.getAll();
+    for (const [key, val] of Object.entries(all)) {
+      _applySetting(key, val);
+    }
+    if (game._applyGraphicsSettings) game._applyGraphicsSettings();
+    _syncSettingsUI();
+  } catch (e) {
+    console.warn('[Settings] startup apply error:', e);
   }
-  if (game._applyGraphicsSettings) game._applyGraphicsSettings();
-  _syncSettingsUI();
 })();

@@ -74,8 +74,9 @@ class InputManager {
 
   _setupKeyboard() {
     document.addEventListener('keydown', (e) => {
-      this._keys[e.key.toLowerCase()] = true;
       const key = e.key.toLowerCase();
+      this._keys[key] = true;
+      this.game.keys[key] = true;
       if (key === 'r' && (this.game.gameState === GameState.PLAYING || this.game.gameState === GameState.TRAINING)) {
         this.reloadRequested = true;
       }
@@ -83,9 +84,14 @@ class InputManager {
         e.preventDefault();
         this.respawnRequested = true;
       }
+      if (key === 'shift' && (this.game.gameState === GameState.PLAYING || this.game.gameState === GameState.TRAINING)) {
+        this.dashRequested = true;
+      }
     });
     document.addEventListener('keyup', (e) => {
-      this._keys[e.key.toLowerCase()] = false;
+      const key = e.key.toLowerCase();
+      this._keys[key] = false;
+      this.game.keys[key] = false;
     });
   }
 

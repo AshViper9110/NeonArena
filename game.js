@@ -228,21 +228,24 @@ class Game {
   }
 
   _applyGraphicsSettings() {
-    const s = SETTINGS.getAll();
-    const dpr = Math.min(window.devicePixelRatio, s.resolutionScale / 100 * 2);
-    const pixelRatio = s.graphicsQuality === 'low' ? Math.min(dpr, 1) :
-      s.graphicsQuality === 'medium' ? Math.min(dpr, 1.5) :
-      Math.min(dpr, 2);
-    this.renderer.setPixelRatio(Math.max(0.5, pixelRatio));
-    this.renderer.setSize(window.innerWidth, window.innerHeight);
-
-    this.renderer.shadowMap.enabled = s.shadows;
-    if (s.shadows) {
-      this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    }
-
-    if (this._fpsLimit !== s.fpsLimit) {
-      this._fpsLimit = s.fpsLimit;
+    if (!this.renderer) return;
+    try {
+      const s = SETTINGS.getAll();
+      const dpr = Math.min(window.devicePixelRatio, s.resolutionScale / 100 * 2);
+      const pixelRatio = s.graphicsQuality === 'low' ? Math.min(dpr, 1) :
+        s.graphicsQuality === 'medium' ? Math.min(dpr, 1.5) :
+        Math.min(dpr, 2);
+      this.renderer.setPixelRatio(Math.max(0.5, pixelRatio));
+      this.renderer.setSize(window.innerWidth, window.innerHeight);
+      this.renderer.shadowMap.enabled = s.shadows;
+      if (s.shadows) {
+        this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      }
+      if (this._fpsLimit !== s.fpsLimit) {
+        this._fpsLimit = s.fpsLimit;
+      }
+    } catch (e) {
+      console.warn('[Game] _applyGraphicsSettings error:', e);
     }
   }
 
