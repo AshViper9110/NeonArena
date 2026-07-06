@@ -508,10 +508,10 @@ function _onLayoutDragEnd(e) {
 function _openLayoutEditor() {
   if (!_isMobile()) return;
   _layoutEditMode = true;
+  if (game.input) game.input._editingLayout = true;
   const layout = _getLayoutFromSettings();
   _applyLayoutToEditor(layout);
   document.getElementById('mobile-layout-editor').style.display = '';
-  document.getElementById('mobile-layout-editor').classList.add('dragging-active');
   game.input.firePressed = false;
   game.input.fireClicked = false;
   _bindLayoutDrag();
@@ -521,8 +521,8 @@ function _openLayoutEditor() {
 function _closeLayoutEditor() {
   _layoutEditMode = false;
   _layoutDragData = null;
+  if (game.input) game.input._editingLayout = false;
   document.getElementById('mobile-layout-editor').style.display = 'none';
-  document.getElementById('mobile-layout-editor').classList.remove('dragging-active');
   _unbindLayoutDrag();
 }
 
@@ -531,6 +531,7 @@ function _bindLayoutDrag() {
   ['fire', 'dash', 'reload'].forEach(action => {
     const btn = document.getElementById('touch-' + action);
     if (!btn) return;
+    btn.style.cursor = 'grab';
     const handler = (e) => _onLayoutDrag(e, action);
     _layoutDragHandlers[action] = handler;
     btn.addEventListener('pointerdown', handler);
@@ -550,6 +551,7 @@ function _unbindLayoutDrag() {
   ['fire', 'dash', 'reload'].forEach(action => {
     const btn = document.getElementById('touch-' + action);
     if (!btn) return;
+    btn.style.cursor = '';
     const handler = _layoutDragHandlers[action];
     if (handler) {
       btn.removeEventListener('pointerdown', handler);

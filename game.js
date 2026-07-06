@@ -2334,6 +2334,7 @@ class Game {
   _handlePlayerInput(lp, dt) {
     const inp = this.input;
     inp.updateMovement();
+    if (inp._editingLayout) return;
 
     this.dashCooldown = Math.max(0, this.dashCooldown - dt);
 
@@ -2366,6 +2367,7 @@ class Game {
       _v3.copy(fwd).multiplyScalar(-mz);
       _v3b.copy(right).multiplyScalar(mx);
       _v3.add(_v3b).normalize();
+      console.debug('[Move] mx=' + mx.toFixed(2) + ' mz=' + mz.toFixed(2) + ' vx=' + _v3.x.toFixed(3) + ' vz=' + _v3.z.toFixed(3));
 
       let speed = CONFIG.playerSpeed * (lp.moveSpeedMult || 1);
       if (lp.statusEffects) {

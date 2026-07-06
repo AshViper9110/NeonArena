@@ -22,6 +22,7 @@ class InputManager {
     this._initialized = false;
     this._touchControlsCreated = false;
     this._touchButtonRefs = {};
+    this._editingLayout = false;
   }
 
   _detectMobile() {
@@ -135,9 +136,10 @@ class InputManager {
       this.moveZ /= len;
     }
 
-    if (this._joystick && this._joystick._active) {
+    if (this._joystick && this._joystick._active && !this._editingLayout) {
       this.moveX = this._joystick.x;
-      this.moveZ = this._joystick.y;
+      this.moveZ = -this._joystick.y;
+      console.debug('[Joystick] x=' + this._joystick.x.toFixed(2) + ' y=' + this._joystick.y.toFixed(2) + ' moveX=' + this.moveX.toFixed(2) + ' moveZ=' + this.moveZ.toFixed(2));
     }
   }
 
@@ -393,6 +395,7 @@ class InputManager {
   }
 
   _handleTouchAction(action, active) {
+    if (this._editingLayout) return;
     switch (action) {
       case 'fire':
         if (active) {
@@ -424,6 +427,7 @@ class InputManager {
     const canvas = this.game.renderer.domElement;
 
     canvas.addEventListener('touchstart', (e) => {
+      if (this._editingLayout) return;
       const touch = e.changedTouches[0];
       if (touch.clientX > window.innerWidth * 0.5) {
         this._touchLookId = touch.identifier;

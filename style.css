@@ -2612,6 +2612,7 @@ textarea:focus {
   width: 100%; height: 100%;
   background: rgba(0,0,0,0.5);
   backdrop-filter: blur(4px);
+  pointer-events: none;
 }
 #mle-panel {
   position: absolute;
@@ -2698,14 +2699,7 @@ textarea:focus {
 }
 .mle-actions .btn { flex: 1; min-width: 80px; }
 
-/* Layout editor: touch btn overrides */
-#mobile-layout-editor.dragging-active #touch-controls .touch-btn {
-  pointer-events: auto;
-  cursor: grab;
-}
-#mobile-layout-editor.dragging-active #touch-controls .touch-btn:active {
-  cursor: grabbing;
-}
+/* Layout editor: touch btn overrides (cursor set via JS) */
 
 /* ============================================================
    VIRTUAL JOYSTICK
