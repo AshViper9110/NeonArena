@@ -284,7 +284,8 @@
           <div class="settings-row">
             <span class="settings-label">照準感度倍率</span>
             <div class="settings-slider-group">
-              <input type="range" class="settings-slider" data-key="aimSensitivityMultiplier" min="0.1" max="1.5" step="0.05">
+              <input type="range" class="settings-slider" data-key="aimSensitivityMultiplier" min="0.1" max="1.5"
+                step="0.05">
               <span class="settings-value" data-for="aimSensitivityMultiplier">0.50</span>
             </div>
           </div>
@@ -456,56 +457,11 @@
   <!-- ========== レイアウトエディタ（スマホのみ） ========== -->
   <div id="mobile-layout-editor" style="display:none;">
     <div id="mle-backdrop"></div>
-    <button id="mle-done-btn">✔ 完了</button>
+    <div id="mle-top-btns">
+      <button class="btn btn-primary btn-small" id="mle-confirm">✔ 決定</button>
+      <button class="btn btn-small" id="mle-back">戻る</button>
+    </div>
     <div id="mle-panel">
-      <div class="mle-header">ボタンレイアウト編集</div>
-      <div class="mle-hint">各ボタンをドラッグして自由に配置</div>
-      <div id="mle-controls">
-        <div class="mle-btn-control" data-btn="fire">
-          <span class="mle-btn-label mle-btn-label-fire">🔥 射撃</span>
-          <div class="mle-slider-row">
-            <span class="mle-slider-label">サイズ</span>
-            <input type="range" class="mle-slider" data-btn="fire" data-prop="size" min="50" max="200" step="5">
-            <span class="mle-slider-val" data-for="fire-size">100</span>
-          </div>
-          <div class="mle-slider-row">
-            <span class="mle-slider-label">透明度</span>
-            <input type="range" class="mle-slider" data-btn="fire" data-prop="opacity" min="0" max="100" step="5">
-            <span class="mle-slider-val" data-for="fire-opacity">100</span>
-          </div>
-        </div>
-        <div class="mle-btn-control" data-btn="dash">
-          <span class="mle-btn-label mle-btn-label-dash">💨 ダッシュ</span>
-          <div class="mle-slider-row">
-            <span class="mle-slider-label">サイズ</span>
-            <input type="range" class="mle-slider" data-btn="dash" data-prop="size" min="50" max="200" step="5">
-            <span class="mle-slider-val" data-for="dash-size">100</span>
-          </div>
-          <div class="mle-slider-row">
-            <span class="mle-slider-label">透明度</span>
-            <input type="range" class="mle-slider" data-btn="dash" data-prop="opacity" min="0" max="100" step="5">
-            <span class="mle-slider-val" data-for="dash-opacity">100</span>
-          </div>
-        </div>
-        <div class="mle-btn-control" data-btn="reload">
-          <span class="mle-btn-label mle-btn-label-reload">🔄 リロード</span>
-          <div class="mle-slider-row">
-            <span class="mle-slider-label">サイズ</span>
-            <input type="range" class="mle-slider" data-btn="reload" data-prop="size" min="50" max="200" step="5">
-            <span class="mle-slider-val" data-for="reload-size">100</span>
-          </div>
-          <div class="mle-slider-row">
-            <span class="mle-slider-label">透明度</span>
-            <input type="range" class="mle-slider" data-btn="reload" data-prop="opacity" min="0" max="100" step="5">
-            <span class="mle-slider-val" data-for="reload-opacity">100</span>
-          </div>
-        </div>
-      </div>
-      <div class="mle-actions">
-        <button class="btn btn-primary btn-small" id="mle-save">💾 保存</button>
-        <button class="btn btn-secondary btn-small" id="mle-reset">↺ デフォルトに戻す</button>
-        <button class="btn btn-small" id="mle-close">閉じる</button>
-      </div>
     </div>
   </div>
 

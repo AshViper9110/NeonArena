@@ -30,23 +30,7 @@ body {
   display: block;
 }
 
-/* === オーバーレイ（接続画面） === */
-#overlay {
-  position: fixed;
-  top: 0; left: 0;
-  width: 100vw; height: 100vh;
-  background: rgba(10, 10, 18, 0.95);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
-  backdrop-filter: blur(8px);
-  padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
-}
-
-#overlay.hidden {
-  display: none;
-}
+/* === オーバーレイ（接続画面） - 現在使用していない（#title-screen を使用） === */
 
 #overlay-inner {
   background: rgba(20, 20, 35, 0.9);
@@ -1578,13 +1562,14 @@ textarea:focus {
   position: fixed;
   top: 0; left: 0;
   width: 100vw; height: 100vh;
-  z-index: 150;
+  z-index: 999999;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(5,5,15,0.85);
+  background: rgba(0,0,0,0.65);
   backdrop-filter: blur(6px);
   padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+  pointer-events: auto;
 }
 #settings-inner {
   background: rgba(20,20,40,0.95);
@@ -2604,7 +2589,6 @@ textarea:focus {
   top: 0; left: 0;
   width: 100vw; height: 100vh;
   z-index: 100;
-  display: none;
   pointer-events: none;
 }
 #mle-backdrop {
@@ -2615,33 +2599,14 @@ textarea:focus {
   backdrop-filter: blur(4px);
   pointer-events: none;
 }
-#mle-done-btn {
+#mle-top-btns {
   position: fixed;
   top: max(12px, env(safe-area-inset-top, 0px));
   left: max(12px, env(safe-area-inset-left, 0px));
   z-index: 102;
-  font-family: 'Rajdhani', sans-serif;
-  font-weight: 700;
-  font-size: 0.8em;
-  letter-spacing: 2px;
-  padding: 10px 20px;
-  background: rgba(0,240,255,0.15);
-  border: 1px solid rgba(0,240,255,0.3);
-  border-radius: 8px;
-  color: #00f0ff;
-  cursor: pointer;
+  display: flex;
+  gap: 8px;
   pointer-events: auto;
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
-  backdrop-filter: blur(4px);
-  box-shadow: 0 0 20px rgba(0,240,255,0.1);
-}
-#mle-done-btn:hover {
-  background: rgba(0,240,255,0.25);
-}
-#mle-done-btn:active {
-  background: rgba(0,240,255,0.35);
-  transform: scale(0.95);
 }
 #mle-panel {
   position: absolute;
@@ -2654,6 +2619,7 @@ textarea:focus {
   padding: 12px 16px 20px;
   box-sizing: border-box;
   z-index: 101;
+  pointer-events: auto;
 }
 .mle-header {
   font-family: 'Orbitron', monospace;
@@ -2720,14 +2686,6 @@ textarea:focus {
   text-align: right;
   font-family: 'Orbitron', monospace;
 }
-.mle-actions {
-  display: flex;
-  gap: 8px;
-  margin-top: 12px;
-  flex-wrap: wrap;
-}
-.mle-actions .btn { flex: 1; min-width: 80px; }
-
 /* Layout editor: touch btn overrides (cursor set via JS) */
 
 /* ============================================================

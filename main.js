@@ -196,12 +196,17 @@ const settingsInner = document.getElementById('settings-inner');
 
 function openSettings() {
   settingsPanel.style.display = 'flex';
+  document.body.appendChild(settingsPanel);
+  const titleScreen = document.getElementById('title-screen');
+  if (titleScreen) titleScreen.style.pointerEvents = 'none';
   _uiSound('ui_click')();
   _syncSettingsUI();
 }
 
 function closeSettings() {
   settingsPanel.style.display = 'none';
+  const titleScreen = document.getElementById('title-screen');
+  if (titleScreen) titleScreen.style.pointerEvents = '';
   _uiSound('ui_click')();
 }
 
@@ -509,9 +514,9 @@ function _openLayoutEditor() {
   console.log('[LayoutEditor] Open');
   _layoutEditMode = true;
   if (game.input) game.input._editingLayout = true;
-  const overlay = document.getElementById('overlay');
-  if (overlay && !overlay.classList.contains('hidden')) {
-    overlay.style.display = 'none';
+  const titleScreen = document.getElementById('title-screen');
+  if (titleScreen && titleScreen.style.display !== 'none') {
+    titleScreen.style.display = 'none';
   }
   if (game.input) {
     if (!game.input._touchControlsCreated) {
@@ -539,9 +544,9 @@ function _closeLayoutEditor() {
   _layoutEditMode = false;
   _layoutDragData = null;
   if (game.input) game.input._editingLayout = false;
-  const overlay = document.getElementById('overlay');
-  if (overlay) {
-    overlay.style.display = '';
+  const titleScreen = document.getElementById('title-screen');
+  if (titleScreen) {
+    titleScreen.style.display = '';
   }
   document.getElementById('mobile-layout-editor').style.display = 'none';
   _unbindLayoutDrag();
@@ -632,10 +637,9 @@ document.getElementById('btn-layout-edit').addEventListener('click', () => {
 });
 
 /* ---- Layout editor save/reset/close ---- */
-document.getElementById('mle-save').addEventListener('click', _saveLayout);
-document.getElementById('mle-reset').addEventListener('click', _resetLayout);
-document.getElementById('mle-close').addEventListener('click', _closeLayoutEditor);
-document.getElementById('mle-done-btn').addEventListener('click', _saveLayout);
+document.getElementById('mle-confirm').addEventListener('click', _saveLayout);
+document.getElementById('mle-back').addEventListener('click', _closeLayoutEditor);
+
 
 /* ---- Reapply layout on resize for responsive positioning ---- */
 window.addEventListener('resize', () => {
