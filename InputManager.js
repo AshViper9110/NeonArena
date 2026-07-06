@@ -187,11 +187,14 @@ class InputManager {
     let joystickPointerId = null;
 
     document.addEventListener('touchstart', (e) => {
+      const tc = document.getElementById('touch-controls');
+      if (!tc || window.getComputedStyle(tc).display === 'none') return;
       const touch = e.changedTouches[0];
       if (touch.clientX < window.innerWidth * 0.4) {
         if (joystickActive) return;
         joystickActive = true;
         joystickPointerId = touch.identifier;
+        this._joystick._active = true;
         this._joystick.show(touch.clientX, touch.clientY);
       }
     }, { passive: true });
@@ -209,6 +212,7 @@ class InputManager {
       if (!touch) return;
       joystickActive = false;
       joystickPointerId = null;
+      this._joystick._active = false;
       this._joystick.hide();
     }, { passive: true });
 
@@ -216,6 +220,7 @@ class InputManager {
       if (joystickActive) {
         joystickActive = false;
         joystickPointerId = null;
+        this._joystick._active = false;
         this._joystick.hide();
       }
     }, { passive: true });
