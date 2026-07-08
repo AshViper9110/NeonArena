@@ -17,40 +17,17 @@ class CheatManager {
   }
 
   /**
-   * チート報告を受け付ける
-   * ログ出力とマップへの記録を行い、閾値に達したら検出イベントを発火
-   * @param {string} peerId - 報告対象プレイヤーID
-   * @param {string} reason - チートと判断した理由
+   * チート報告を受け付ける（現在無効化）
    */
   report(peerId, reason) {
-    const p = this.game.players.get(peerId);
-    const name = p ? p.name : peerId;
-    console.log('[CHEAT] Player=%s Reason=%s Timestamp=%d', name, reason, Date.now());
-    this.reasons.set(peerId, reason);
-    if (this.reasons.size >= this.cheatThreshold) {
-      this._triggerCheatDetected(peerId, reason);
-    }
+    // 無効化
   }
 
   /**
-   * チート検出イベントを発火
-   * 全プレイヤーにチート検出メッセージをブロードキャストし、
-   * ゲーム側のハンドラを呼び出す
-   * @param {string} peerId - 検出されたプレイヤーID
-   * @param {string} reason - 検出理由
+   * チート検出イベントを発火（現在無効化）
    */
   _triggerCheatDetected(peerId, reason) {
-    if (this.game.gameOver) return;
-    const p = this.game.players.get(peerId);
-    const name = p ? p.name : peerId;
-    const msg = {
-      type: 'cheat_detected',
-      playerId: peerId,
-      playerName: name,
-      reason,
-    };
-    this.game.network.broadcast(msg);
-    this.game._handleCheatDetected(msg);
+    // 無効化
   }
 
   /**

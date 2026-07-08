@@ -75,7 +75,6 @@ class CheatValidator {
    */
   validateFireRate(peerId, weapon, hostTime) {
     const wp = WEAPONS[weapon];
-    //if (!wp) return { ok: false, reason: 'Invalid Weapon' };
     return { ok: true };
   }
 
