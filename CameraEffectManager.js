@@ -77,6 +77,36 @@ class CameraEffectManager {
     this.fovSpeed = speed || 8;
   }
 
+  /* 被弾シェイク（汎用シェイクのラッパー） */
+  hitShake(intensity) {
+    this.shake(intensity || 3);
+  }
+
+  /* ダメージフラッシュ（赤色） */
+  damageFlash() {
+    this.flash('rgba(255,0,0,0.3)', 0.4);
+  }
+
+  /* キル時のスローモーション効果（シェイク） */
+  killSlowMo() {
+    this.shake(2);
+  }
+
+  /* 爆発シェイク */
+  explosionShake(intensity) {
+    this.shake(intensity || 6);
+  }
+
+  /* ダッシュ時のFOV拡大 */
+  dashFov() {
+    this.fovKick(5, 10);
+  }
+
+  /* 現在の赤フラッシュ透明度を取得（game.jsのdamage-overlay更新用） */
+  getRedFlash() {
+    return this.flashOpacity;
+  }
+
   /**
    * 毎フレームの更新処理
    * @param {number} dt - デルタタイム（秒）
