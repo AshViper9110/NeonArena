@@ -11,7 +11,7 @@
  */
 class CheatValidator {
   constructor() {
-    this.processedInputs = new Set();  // 処理済み入力ID（リプレイ攻撃防止）
+    this.processedInputs = new Set(); // 処理済み入力ID（リプレイ攻撃防止）
   }
 
   /**
@@ -75,7 +75,7 @@ class CheatValidator {
    */
   validateFireRate(peerId, weapon, hostTime) {
     const wp = WEAPONS[weapon];
-    if (!wp) return { ok: false, reason: 'Invalid Weapon' };
+    //if (!wp) return { ok: false, reason: 'Invalid Weapon' };
     return { ok: true };
   }
 
@@ -123,24 +123,21 @@ class CheatValidator {
    * @param {string} peerId - プレイヤーID
    * @param {number} health - 初期体力
    */
-  initShadowHealth(peerId, health) {
-  }
+  initShadowHealth(peerId, health) {}
 
   /**
    * ダメージ追跡（サーバ側のシャドウ体力を減算）
    * @param {string} peerId - プレイヤーID
    * @param {number} damage - ダメージ量
    */
-  trackDamage(peerId, damage) {
-  }
+  trackDamage(peerId, damage) {}
 
   /**
    * 回復追跡（サーバ側のシャドウ体力を加算）
    * @param {string} peerId - プレイヤーID
    * @param {number} health - 現在体力
    */
-  trackRegen(peerId, health) {
-  }
+  trackRegen(peerId, health) {}
 
   /**
    * シャドウ体力検証（報告値との整合性チェック）
@@ -158,8 +155,7 @@ class CheatValidator {
    * @param {THREE.Vector3} pos - 位置
    * @param {number} time - 時刻
    */
-  recordPosition(peerId, pos, time) {
-  }
+  recordPosition(peerId, pos, time) {}
 
   /**
    * 最後の記録位置を取得
