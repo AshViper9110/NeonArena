@@ -1,9 +1,15 @@
-/* PassiveManager - single source of truth for all passive modifier calculations
- * Data-driven: no if/switch chains. Modifier keys map generically to properties.
- * Multiplicative modifiers stack by multiplication.
- * Additive flat modifiers stack by addition.
- * Additive count modifiers stack by addition.
- * Boolean flags are OR'd.
+/* ============================================================
+   NEON ARENA - パッシブスキル適用
+   パッシブスキルのモディファイア計算と適用を一元管理
+   ============================================================ */
+
+/**
+ * パッシブスキル管理 - 全モディファイア計算の唯一の情報源
+ * データ駆動設計: if/switchの連鎖は行わず、モディファイアキーで汎用的にプロパティをマッピング
+ * 乗算系: 累積で乗算
+ * 加算（flat）系: 累積で加算
+ * 加算（additive）系: 累積で加算
+ * 真偽値フラグ: OR結合
  */
 const MODIFIER_TYPES = {
   multiplier: new Set([
@@ -38,16 +44,21 @@ const MODIFIER_TYPES = {
   ])
 };
 
+/**
+ * パッシブスキル管理クラス
+ * プレイヤーに割り当てられたパッシブスキルからモディファイアを計算し、
+ * 武器・発射物・ビーム・爆発などに適用する
+ */
 class PassiveManager {
   constructor(game) {
     this.game = game;
-    this._playerPassives = {};
-    this._modifierCache = {};
-    this._ammoRegenTimers = {};
+    this._playerPassives = {};       // プレイヤーID -> パッシブID配列
+    this._modifierCache = {};        // プレイヤーID -> 計算済みモディファイア
+    this._ammoRegenTimers = {};      // プレイヤーID -> 弾薬自動回復タイマー
   }
 
   /* ======================== */
-  /* Compatibility API         */
+  /* 互換性API                 */
   /* ======================== */
 
   setPassive(playerId, passiveId) {
@@ -80,8 +91,12 @@ class PassiveManager {
     player.ammo = player.maxAmmo;
   }
 
+  /**
+   * 毎フレームの更新処理
+   * 弾薬自動回復タイマーを進め、1秒ごとに回復を適用
+   * @param {number} dt - デルタタイム（秒）
+   */
   updateAll(dt) {
-    /* Ammo regen */
     for (const [playerId, timer] of Object.entries(this._ammoRegenTimers)) {
       this._ammoRegenTimers[playerId] = timer + dt;
       if (this._ammoRegenTimers[playerId] >= 1) {
@@ -97,7 +112,7 @@ class PassiveManager {
       }
     }
 
-    /* Initialize ammo regen timers */
+    /* 新規プレイヤーの弾薬回復タイマーを初期化 */
     this.game.players.forEach((player, id) => {
       const mods = this.getAllModifiers(id);
       if (mods && mods.ammoRegenPerSec && this._ammoRegenTimers[id] === undefined) {
@@ -106,6 +121,10 @@ class PassiveManager {
     });
   }
 
+  /**
+   * キル時の弾薬回復処理
+   * @param {string} playerId - キルしたプレイヤーID
+   */
   onKill(playerId) {
     const mods = this.getAllModifiers(playerId);
     if (!mods) return;
@@ -153,6 +172,11 @@ class PassiveManager {
     return this.getMultiplier('spreadMultiplier', playerId) || 1;
   }
 
+  /**
+   * クリティカルヒット判定
+   * @param {string} playerId - プレイヤーID
+   * @returns {boolean} クリティカルならtrue
+   */
   isCritical(playerId) {
     const chance = this.getAdditive('criticalChance', playerId) || 0;
     return Math.random() < chance;
@@ -191,7 +215,7 @@ class PassiveManager {
   }
 
   /* ======================== */
-  /* Public API                */
+  /* 公開API                  */
   /* ======================== */
 
   assignPassive(playerId, passiveId) {
@@ -227,7 +251,7 @@ class PassiveManager {
     return this.getPassiveIds(playerId).includes(passiveId);
   }
 
-  /* --- Modifier resolution --- */
+  /* --- モディファイア解決 --- */
 
   getMultiplier(key, playerId) {
     return this._resolve(playerId, 'multiplier', key);
@@ -278,8 +302,14 @@ class PassiveManager {
     return 1;
   }
 
-  /* --- Application helpers --- */
+  /* --- 適用ヘルパー --- */
 
+  /**
+   * モディファイアを発射物に適用
+   * 速度・サイズ・射程・貫通・跳弾・チェイン・状態異常などを設定
+   * @param {Object} projectile - 発射物オブジェクト
+   * @param {string} ownerId - 発射したプレイヤーID
+   */
   applyToProjectile(projectile, ownerId) {
     const mods = this.getAllModifiers(ownerId);
     if (!mods) return;
@@ -322,7 +352,6 @@ class PassiveManager {
       projectile.criticalDamageMultiplier = mods.criticalDamageMultiplier;
     }
 
-    /* passiveSizeMult for hit detection compatibility */
     if (mods.projSizeMultiplier != null) {
       projectile.passiveSizeMult = mods.projSizeMultiplier;
     }
@@ -350,18 +379,23 @@ class PassiveManager {
       projectile.poisonDamagePerSec = mods.poisonDamagePerSec;
     }
 
-    /* Life steal */
     if (mods.lifeSteal != null) {
       projectile.lifeSteal = mods.lifeSteal;
     }
 
-    /* Executioner (bonus damage to low HP targets) */
+    /* 処刑者（低HP対象へのボーナスダメージ） */
     if (mods.executionerThreshold != null) {
       projectile.executionerThreshold = mods.executionerThreshold;
       projectile.executionerDamageMult = mods.executionerDamageMult || 1.3;
     }
   }
 
+  /**
+   * モディファイアをビームデータに適用
+   * 幅・射程・ダメージ・拡散・反射・状態異常などを設定
+   * @param {Object} beamData - ビームデータオブジェクト
+   * @param {string} ownerId - 発射したプレイヤーID
+   */
   applyToBeam(beamData, ownerId) {
     const mods = this.getAllModifiers(ownerId);
     if (!mods) return;
@@ -416,6 +450,11 @@ class PassiveManager {
     }
   }
 
+  /**
+   * モディファイアを爆発データに適用
+   * @param {Object} explosionData - 爆発データオブジェクト
+   * @param {string} ownerId - 発生源プレイヤーID
+   */
   applyToExplosion(explosionData, ownerId) {
     const mods = this.getAllModifiers(ownerId);
     if (!mods) return;
@@ -428,20 +467,23 @@ class PassiveManager {
     }
   }
 
-  /* --- Internal --- */
+  /* --- 内部処理 --- */
 
+  /**
+   * モディファイアをプレイヤー自身に適用（移動速度・体力回復など）
+   * @param {Object} player - プレイヤーオブジェクト
+   * @param {string} playerId - プレイヤーID
+   */
   _applyModifiersToPlayer(player, playerId) {
     const mods = this.getAllModifiers(playerId);
     if (!mods) return;
 
-    /* Movement */
     if (mods.moveSpeed != null) player.moveSpeedMult = mods.moveSpeed;
     else player.moveSpeedMult = 1;
 
     if (mods.dashSpeed != null) player.dashSpeedMult = mods.dashSpeed;
     else player.dashSpeedMult = 1;
 
-    /* Health regen */
     if (mods.healthRegen != null) {
       player.healthRegen = mods.healthRegen;
     } else {
@@ -458,6 +500,12 @@ class PassiveManager {
     return this._computeModifiers(playerId);
   }
 
+  /**
+   * モディファイアの計算
+   * パッシブ定義から全モディファイアを収集・集計する
+   * @param {string} playerId - プレイヤーID
+   * @returns {Object} 計算済みモディファイア（flat/mult/flags）
+   */
   _computeModifiers(playerId) {
     const result = { flat: {}, mult: {}, flags: {} };
     const ids = this.getPassiveIds(playerId);
@@ -518,6 +566,11 @@ class PassiveManager {
     return !!cache.flags[key];
   }
 
+  /**
+   * モディファイアキーの種別を判定
+   * @param {string} key - モディファイアキー
+   * @returns {string} 種別名
+   */
   _typeOfKey(key) {
     if (MODIFIER_TYPES.multiplier.has(key)) return 'multiplier';
     if (MODIFIER_TYPES.flat.has(key)) return 'flat';

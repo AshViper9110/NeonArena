@@ -1,25 +1,27 @@
-// ============================================================
-// NEON ARENA - ネットワーク管理
-// PeerJSを用いたスター型ネットワーク
-// ============================================================
+/* ============================================================
+   NEON ARENA - ネットワーク管理
+   PeerJSを用いたスター型ネットワーク
+   ホスト: 全クライアントと接続、ブロードキャスト
+   クライアント: ホスト1台と接続、状態送信
+   ============================================================ */
 
 class NetworkManager {
   constructor(game) {
-    this.game = game;                    // Gameインスタンス参照
-    this.peer = null;                    // PeerJSピアインスタンス
-    this.connections = [];               // ホスト側: クライアント接続配列
-    this.conn = null;                    // クライアント側: ホストへの接続
-    this.isHost = false;                 // ホストフラグ
-    this.roomId = null;                  // ルームID
-    this.myId = null;                    // 自分のピアID
-    this.connected = false;              // 接続状態
-    this.sendTimer = 0;                  // 状態送信タイマー
-    this.peerPacketCount = new Map();    // ピア別パケットカウント
+    this.game = game;                    /* Gameインスタンス参照 */
+    this.peer = null;                    /* PeerJSピアインスタンス */
+    this.connections = [];               /* ホスト側: クライアント接続配列 */
+    this.conn = null;                    /* クライアント側: ホストへの単一接続 */
+    this.isHost = false;                 /* ホストフラグ */
+    this.roomId = null;                  /* ルームID（= ホストのPeerID） */
+    this.myId = null;                    /* 自分のピアID */
+    this.connected = false;              /* 接続状態 */
+    this.sendTimer = 0;                  /* 状態送信用インターバルタイマー */
+    this.peerPacketCount = new Map();    /* ピア別パケットカウンタ（診断用） */
   }
 
   /**
    * ルーム作成（ホストになる）
-   * @returns {Promise<string>} ルームID
+   * @returns {Promise<string>} 生成されたルームID
    */
   async createRoom() {
     this.isHost = true;
@@ -37,8 +39,8 @@ class NetworkManager {
   }
 
   /**
-   * ルーム参加
-   * @param {string} roomId - ルームID
+   * ルーム参加（クライアントになる）
+   * @param {string} roomId - 参加先ルームID
    * @param {string} playerName - プレイヤー名
    * @returns {Promise<void>}
    */
@@ -62,14 +64,16 @@ class NetworkManager {
   }
 
   /**
-   * 接続セットアップ（共通処理）
+   * 接続の共通セットアップ：データ受信ハンドラ・切断ハンドラ
    * @param {Object} conn - PeerJS接続オブジェクト
    */
   _setupConn(conn) {
     console.log('[Network] _setupConn peerId=%s isHost=%s conn.open=%s', conn.peer, this.isHost, conn.open);
+    /* データ受信 → Game.handleMessage に委譲 */
     conn.on('data', (data) => {
       this.game.handleMessage(data, conn);
     });
+    /* 切断処理 */
     conn.on('close', () => {
       console.log('[Network] conn CLOSED peerId=%s isHost=%s', conn.peer, this.isHost);
       if (this.isHost) {
@@ -81,6 +85,7 @@ class NetworkManager {
         this.game.onDisconnected();
       }
     });
+    /* クライアント側の接続確立ハンドラ */
     if (!this.isHost) {
       conn.on('open', () => {
         console.log('[Network] conn OPEN peerId=%s → connected=true', conn.peer);
@@ -90,8 +95,8 @@ class NetworkManager {
   }
 
   /**
-   * ピア切断処理
-   * @param {Object} conn - 接続オブジェクト
+   * 特定のピアを強制切断
+   * @param {Object} conn - 切断する接続オブジェクト
    */
   _disconnectPeer(conn) {
     try { conn.close(); } catch(e) {}
@@ -101,7 +106,7 @@ class NetworkManager {
   }
 
   /**
-   * メッセージ送信（クライアント→ホスト）
+   * ホスト宛にメッセージを送信（クライアント→ホスト）
    * @param {Object} data - 送信データ
    */
   send(data) {
@@ -113,7 +118,7 @@ class NetworkManager {
   }
 
   /**
-   * 特定ピアへ送信（ホスト→クライアント）
+   * 特定のピアへ送信（ホスト→クライアント）
    * @param {string} peerId - 宛先ピアID
    * @param {Object} data - 送信データ
    */
@@ -124,9 +129,9 @@ class NetworkManager {
   }
 
   /**
-   * ブロードキャスト（ホスト→全クライアント）
+   * 全クライアントへブロードキャスト（ホスト→全員）
    * @param {Object} data - 送信データ
-   * @param {Object} [exclude] - 除外する接続
+   * @param {Object} [exclude] - 除外する接続（オプション）
    */
   broadcast(data, exclude) {
     const targets = this.connections.filter(c => c !== exclude && c.open);
@@ -138,7 +143,7 @@ class NetworkManager {
   }
 
   /**
-   * 状態同期送信
+   * 自プレイヤーの位置/状態を定期的にホスト/全員に送信
    * @param {number} dt - デルタタイム
    */
   sendState(dt) {
@@ -166,11 +171,11 @@ class NetworkManager {
   }
 
   /**
-   * 発射リクエスト送信
+   * 発射リクエストをホストに送信
    * @param {string} weapon - 武器ID
    * @param {THREE.Vector3} position - 発射位置
    * @param {THREE.Vector3} direction - 発射方向
-   * @param {number} inputId - 入力ID
+   * @param {number} inputId - 入力ID（重複防止）
    * @param {number} color - プレイヤーカラー
    */
   sendFireRequest(weapon, position, direction, inputId, color) {
@@ -187,9 +192,9 @@ class NetworkManager {
   }
 
   /**
-   * ビーム発射送信
+   * ビーム発射リクエストをホストに送信
    * @param {string} weapon - 武器ID
-   * @param {THREE.Vector3} origin - 発射原点
+   * @param {THREE.Vector3} origin - 発射起点
    * @param {THREE.Vector3} direction - 発射方向
    * @param {number} inputId - 入力ID
    * @param {number} color - プレイヤーカラー
@@ -206,43 +211,31 @@ class NetworkManager {
     });
   }
 
-  /* ロビー同期メッセージ */
+  /* ============================================================
+     ロビー同期メッセージ（準備・武器・パッシブ・名前変更）
+     ============================================================ */
 
-  /**
-   * 準備状態送信
-   * @param {boolean} ready - 準備完了フラグ
-   */
+  /* 準備完了状態をホストに送信 */
   sendReady(ready) {
     this.send({ type: NetMsg.READY, ready });
   }
 
-  /**
-   * 武器変更送信
-   * @param {string} weapon - 武器ID
-   */
+  /* 武器選択変更をホストに送信 */
   sendWeaponChange(weapon) {
     this.send({ type: NetMsg.WEAPON_CHANGE, weapon });
   }
 
-  /**
-   * パッシブ変更送信
-   * @param {string} passiveId - パッシブID
-   */
+  /* パッシブ選択変更をホストに送信 */
   sendPassiveChange(passiveId) {
     this.send({ type: 'passive_change', passiveId });
   }
 
-  /**
-   * 名前変更送信
-   * @param {string} name - 新しい名前
-   */
+  /* 名前変更をホストに送信 */
   sendNameChange(name) {
     this.send({ type: NetMsg.NAME_CHANGE, name });
   }
 
-  /**
-   * 接続クローズ
-   */
+  /* 全接続を閉じてクリーンアップ */
   close() {
     this.connections.forEach(c => c.close());
     if (this.conn) this.conn.close();

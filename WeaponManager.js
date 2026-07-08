@@ -1,8 +1,13 @@
-// ============================================================
-// NEON ARENA - 武器マネージャー
-// プレイヤーの武器選択・切り替え・お気に入り管理
-// ============================================================
+/* ============================================================
+   NEON ARENA - 武器マネージャー
+   プレイヤーの武器選択・切り替え・お気に入り管理
+   ============================================================ */
 
+/**
+ * 武器管理クラス
+ * 武器レジストリをラップし、現在の武器選択・切り替え・
+ * お気に入り登録・カテゴリフィルタ・検索・ソート機能を提供する
+ */
 class WeaponManager {
   constructor(registry) {
     this.registry = registry || WEAPON_REGISTRY;
@@ -20,7 +25,7 @@ class WeaponManager {
   get currentId() { return this._current; }
 
   /**
-   * 次の武器に切り替え
+   * 次の武器に切り替え（循環）
    * @returns {string} 新しい武器ID
    */
   next() {
@@ -32,7 +37,7 @@ class WeaponManager {
   }
 
   /**
-   * 前の武器に切り替え
+   * 前の武器に切り替え（循環）
    * @returns {string} 新しい武器ID
    */
   prev() {
@@ -91,7 +96,8 @@ class WeaponManager {
     return w && w.weaponType === 'beam';
   }
 
-  /* === NEW: Type checks === */
+  /* === 新規: タイプチェック === */
+
   /**
    * エネルギー武器か判定
    * @param {string} id - 武器ID
@@ -132,7 +138,8 @@ class WeaponManager {
     return w && w.weaponType === 'special';
   }
 
-  /* === NEW: Category operations === */
+  /* === 新規: カテゴリ操作 === */
+
   /** カテゴリ一覧を取得 */
   getCategories() { return this.registry.getCategories(); }
 
@@ -150,7 +157,8 @@ class WeaponManager {
    */
   getByType(type) { return this.registry.getByType(type); }
 
-  /* === NEW: Search === */
+  /* === 新規: 検索 === */
+
   /**
    * キーワード検索
    * @param {string} query - 検索クエリ
@@ -158,7 +166,8 @@ class WeaponManager {
    */
   search(query) { return this.registry.search(query); }
 
-  /* === NEW: Sort === */
+  /* === 新規: ソート === */
+
   /** ダメージ順ソート */
   sortByDamage() { return this.registry.sortByDamage(); }
   /** 連射速度順ソート */
@@ -166,11 +175,12 @@ class WeaponManager {
   /** 射程順ソート */
   sortByRange() { return this.registry.sortByRange(); }
 
-  /* === NEW: Favorites === */
+  /* === 新規: お気に入り === */
+
   /**
-   * お気に入り切り替え
+   * お気に入りを切り替え
    * @param {string} id - 武器ID
-   * @returns {boolean} お気に入り状態（true=追加、false=削除）
+   * @returns {boolean} 追加されたらtrue、削除されたらfalse
    */
   toggleFavorite(id) {
     if (this._favorites.has(id)) { this._favorites.delete(id); return false; }

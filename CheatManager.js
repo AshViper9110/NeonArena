@@ -1,8 +1,13 @@
-// ============================================================
-// NEON ARENA - チート管理
-// チート検出報告、判定閾値管理、検出時の処理
-// ============================================================
+/* ============================================================
+   NEON ARENA - チート管理
+   チート検出報告、判定閾値管理、検出時の処理
+   ============================================================ */
 
+/**
+ * チート管理クラス
+ * 不審なプレイヤー行動を検出・報告し、
+ * 閾値を超えた場合にチート判定イベントを発火する
+ */
 class CheatManager {
   constructor(game) {
     this.game = game;                    // Gameインスタンス参照
@@ -12,9 +17,10 @@ class CheatManager {
   }
 
   /**
-   * チート報告
-   * @param {string} peerId - プレイヤーID
-   * @param {string} reason - チート理由
+   * チート報告を受け付ける
+   * ログ出力とマップへの記録を行い、閾値に達したら検出イベントを発火
+   * @param {string} peerId - 報告対象プレイヤーID
+   * @param {string} reason - チートと判断した理由
    */
   report(peerId, reason) {
     const p = this.game.players.get(peerId);
@@ -27,9 +33,11 @@ class CheatManager {
   }
 
   /**
-   * チート検出イベント発火
-   * @param {string} peerId - プレイヤーID
-   * @param {string} reason - チート理由
+   * チート検出イベントを発火
+   * 全プレイヤーにチート検出メッセージをブロードキャストし、
+   * ゲーム側のハンドラを呼び出す
+   * @param {string} peerId - 検出されたプレイヤーID
+   * @param {string} reason - 検出理由
    */
   _triggerCheatDetected(peerId, reason) {
     if (this.game.gameOver) return;
@@ -46,7 +54,8 @@ class CheatManager {
   }
 
   /**
-   * 状態リセット
+   * 状態をリセット
+   * マップ変更やゲーム再開時に呼び出される
    */
   reset() {
     this.reasons.clear();

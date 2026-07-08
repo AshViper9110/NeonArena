@@ -1,3 +1,13 @@
+/* ============================================================
+   NEON ARENA - バーチャルジョイスティック
+   タッチ操作の仮想スティックを実装
+   ============================================================ */
+
+/**
+ * バーチャルジョイスティッククラス
+ * モバイルタッチ操作のための仮想スティックを提供する
+ * Pointer Events APIを使用して、スティックの入力を正規化(-1〜1)で出力
+ */
 class VirtualJoystick {
   constructor(options = {}) {
     this.zone = options.zone || document.body;
@@ -6,17 +16,20 @@ class VirtualJoystick {
     this.onInput = options.onInput || (() => {});
     this.onEnd = options.onEnd || (() => {});
 
-    this.x = 0;
-    this.y = 0;
-    this._active = false;
-    this._touchId = null;
-    this._centerX = 0;
-    this._centerY = 0;
+    this.x = 0;               // 現在のX入力値（-1〜1）
+    this.y = 0;               // 現在のY入力値（-1〜1）
+    this._active = false;     // アクティブフラグ
+    this._touchId = null;     // アクティブなタッチのID
+    this._centerX = 0;        // スティックの中心X座標
+    this._centerY = 0;        // スティックの中心Y座標
 
     this._createUI();
     this._bindEvents();
   }
 
+  /**
+   * ジョイスティックのDOM要素を作成
+   */
   _createUI() {
     this.el = document.createElement('div');
     this.el.className = 'virtual-joystick';
@@ -49,6 +62,11 @@ class VirtualJoystick {
     this.zone.appendChild(this.el);
   }
 
+  /**
+   * ジョイスティックを表示し、指定座標に配置
+   * @param {number} x - 画面X座標
+   * @param {number} y - 画面Y座標
+   */
   show(x, y) {
     this._centerX = x;
     this._centerY = y;
@@ -57,6 +75,9 @@ class VirtualJoystick {
     this.el.style.top = (y - this.size / 2) + 'px';
   }
 
+  /**
+   * ジョイスティックを非表示にし、入力をリセット
+   */
   hide() {
     this.el.style.display = 'none';
     this.x = 0;
@@ -66,6 +87,9 @@ class VirtualJoystick {
     this._updateKnob();
   }
 
+  /**
+   * Pointer Eventsのバインド
+   */
   _bindEvents() {
     this.el.addEventListener('pointerdown', (e) => {
       e.preventDefault();
@@ -104,6 +128,11 @@ class VirtualJoystick {
     });
   }
 
+  /**
+   * ポインター移動処理
+   * 中心からの変位を正規化(-1〜1)して出力
+   * @param {PointerEvent} e - ポインターイベント
+   */
   _onMove(e) {
     const dx = e.clientX - this._centerX;
     const dy = e.clientY - this._centerY;
@@ -115,6 +144,7 @@ class VirtualJoystick {
       nx = dx / dist;
       ny = dy / dist;
     }
+    /* 閾値以下の入力を無視（デッドゾーン） */
     if (Math.abs(nx) < this.threshold && Math.abs(ny) < this.threshold) {
       nx = 0;
       ny = 0;
@@ -125,6 +155,9 @@ class VirtualJoystick {
     this.onInput(this.x, this.y);
   }
 
+  /**
+   * ノブの位置を入力値に応じて更新
+   */
   _updateKnob() {
     const maxR = this.size / 2 - this.size * 0.24;
     const kx = this.x * maxR;
@@ -132,6 +165,9 @@ class VirtualJoystick {
     this.knob.style.transform = 'translate(calc(-50% + ' + kx + 'px), calc(-50% + ' + ky + 'px))';
   }
 
+  /**
+   * リソースを解放
+   */
   destroy() {
     if (this.el && this.el.parentNode) this.el.parentNode.removeChild(this.el);
   }

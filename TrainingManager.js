@@ -1,21 +1,34 @@
+/* ============================================================
+   NEON ARENA - トレーニングモード管理
+   訓練用ターゲット・統計・アリーナ構築を担当
+   ============================================================ */
+
+/**
+ * トレーニングモード管理クラス
+ * 訓練用アリーナの生成、ターゲット配置、統計（DPS・命中率等）の計測・表示を行う
+ */
 class TrainingManager {
   constructor(game) {
     this.game = game;
-    this.targets = null;
+    this.targets = null;           // TrainingTargetインスタンス
     this.stats = {
-      totalDamage: 0,
-      hitCount: 0,
-      shotsFired: 0,
-      dps: 0,
-      dpsHistory: [],
-      lastDpsUpdate: 0,
-      startTime: 0,
-      lastHitTime: 0,
+      totalDamage: 0,               // 累積ダメージ
+      hitCount: 0,                  // 命中回数
+      shotsFired: 0,                // 発射回数
+      dps: 0,                       // 秒間ダメージ
+      dpsHistory: [],               // DPS計算用履歴
+      lastDpsUpdate: 0,             // 最終DPS更新時刻
+      startTime: 0,                 // 開始時刻
+      lastHitTime: 0,               // 最終命中時刻
     };
     this.selectedPassives = [];
     this.selectedWeapon = game.loadoutWeapon || 'pistol';
   }
 
+  /**
+   * トレーニングモードを初期化
+   * アリーナ・ターゲット生成とUI更新を実行
+   */
   init() {
     this.targets = new TrainingTarget(this.game.scene);
     this._createTrainingArena();
@@ -25,6 +38,10 @@ class TrainingManager {
     this._updateUIStats();
   }
 
+  /**
+   * トレーニングアリーナを構築
+   * 背景色・照明・床・壁・距離マーカー・遮蔽物を生成
+   */
   _createTrainingArena() {
     const scene = this.game.scene;
     const size = 120;
@@ -42,6 +59,7 @@ class TrainingManager {
       this.game.dirLight.intensity = 1.2;
     }
 
+    /* 床（暗いメタリック面） */
     const floorMat = new THREE.MeshStandardMaterial({
       color: 0x0d0d1a,
       metalness: 0.4,
@@ -53,6 +71,7 @@ class TrainingManager {
     scene.add(floor);
     this.game.arenaObjects.push(floor);
 
+    /* グリッド（2重の半透明グリッドで奥行き感を演出） */
     const grid1 = new THREE.GridHelper(size, 30, 0x00f0ff, 0x003355);
     grid1.material.transparent = true;
     grid1.material.opacity = 0.12;
@@ -67,6 +86,7 @@ class TrainingManager {
     scene.add(grid2);
     this.game.arenaObjects.push(grid2);
 
+    /* 壁（ネオンエッジ付き） */
     const wallMat = new THREE.MeshStandardMaterial({
       color: 0x1a1a2e,
       metalness: 0.2,
@@ -96,6 +116,7 @@ class TrainingManager {
     addWall([-half, 4, 0], [1, 8, size]);
     addWall([half, 4, 0], [1, 8, size]);
 
+    /* 距離レーンマーカーとラベル */
     const laneMarkers = [-50, -25, 0, 25, 50];
     for (const z of laneMarkers) {
       const markerMat = new THREE.MeshBasicMaterial({
@@ -130,6 +151,7 @@ class TrainingManager {
       this._distLabels.push(distLabel);
     }
 
+    /* 遮蔽物（半透明ボックス） */
     const coverMat = new THREE.MeshStandardMaterial({
       color: 0x222244,
       metalness: 0.3,
@@ -161,6 +183,10 @@ class TrainingManager {
     this.game.arenaMap = { size, walls: [] };
   }
 
+  /**
+   * ターゲットを配置
+   * 固定ターゲット（10〜100m）と移動ターゲット（15〜60m）を生成
+   */
   _spawnTargets() {
     const distances = [10, 25, 50, 75, 100];
     for (const d of distances) {
@@ -183,6 +209,10 @@ class TrainingManager {
     this._updateUIStats();
   }
 
+  /**
+   * 統計UIを更新
+   * ダメージ・DPS・命中数・発射数・命中率を表示
+   */
   _updateUIStats() {
     const now = performance.now();
     const elapsed = (now - this.stats.startTime) / 1000;
@@ -212,6 +242,10 @@ class TrainingManager {
     document.getElementById('training-accuracy-value').textContent = accuracy + '%';
   }
 
+  /**
+   * トレーニングをリセット
+   * 統計・ターゲット・プレイヤー状態を初期化
+   */
   reset() {
     this.stats.totalDamage = 0;
     this.stats.hitCount = 0;
@@ -236,6 +270,9 @@ class TrainingManager {
     this._updateUIStats();
   }
 
+  /**
+   * 距離ラベルの位置をカメラに追従させる
+   */
   updateDistanceLabels() {
     if (!this._distLabels) return;
     for (const label of this._distLabels) {
@@ -250,12 +287,19 @@ class TrainingManager {
     }
   }
 
+  /**
+   * 毎フレームの更新処理
+   * @param {number} dt - デルタタイム（秒）
+   */
   update(dt) {
     if (this.targets) this.targets.update(dt);
     this.updateDistanceLabels();
     this._updateUIStats();
   }
 
+  /**
+   * リソースを解放
+   */
   destroy() {
     if (this.targets) this.targets.destroy();
     if (this._distLabels) {

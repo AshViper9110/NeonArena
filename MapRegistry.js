@@ -1,3 +1,13 @@
+/* ============================================================
+   NEON ARENA - マップ定義
+   全マップのジオメトリ・色・スポーン位置を一元管理
+   ============================================================ */
+
+/**
+ * マップレジストリクラス
+ * 各マップの壁・パッド・スポーン位置・視覚パラメータを定義し、
+ * スケーリングとIDによる検索を提供する
+ */
 class MapRegistry {
   constructor() {
     this._list = [];
@@ -5,6 +15,11 @@ class MapRegistry {
     this._build();
   }
 
+  /**
+   * マップ定義を追加・正規化
+   * @param {string} id - マップID
+   * @param {Object} def - マップ定義
+   */
   _add(id, def) {
     def.id = id;
     def.difficulty = def.difficulty || 1;
@@ -16,10 +31,20 @@ class MapRegistry {
     this._map[id] = def;
   }
 
+  /**
+   * 全マップ定義を構築
+   */
   _build() {
     const s = (v, f) => Math.round(v * f);
     const w = (p, sz) => ({ p, s: sz });
 
+    /**
+     * ベース定義をスケーリング
+     * @param {Object} base - ベース定義
+     * @param {number} f - サイズ倍率
+     * @param {number} hMul - 高さ倍率
+     * @returns {Object} スケーリング済み定義
+     */
     const sc = (base, f, hMul) => {
       const wallH = Math.min(Math.round(base.wallHeight * hMul), 6);
       const hm = Math.min(hMul, 2);
@@ -370,30 +395,54 @@ class MapRegistry {
     })());
   }
 
+  /** 全マップIDを取得 */
   getAll() { return this._list.slice(); }
+  /** IDからマップ定義を取得 */
   get(id) { return this._map[id] || null; }
+  /** マップIDのインデックスを取得 */
   getIndex(id) { return this._list.indexOf(id); }
 
+  /**
+   * 指定インデックスのマップを取得（ループ対応）
+   * @param {number} index - インデックス
+   * @returns {string} マップID
+   */
   at(index) {
     if (index < 0) index = this._list.length - 1;
     else if (index >= this._list.length) index = 0;
     return this._list[index];
   }
 
+  /**
+   * 指定マップの次のマップIDを取得
+   * @param {string} id - 基準マップID
+   * @returns {string} 次のマップID
+   */
   next(id) {
     const idx = this.getIndex(id);
     if (idx === -1) return this._list[0];
     return this.at(idx + 1);
   }
 
+  /**
+   * 指定マップの前のマップIDを取得
+   * @param {string} id - 基準マップID
+   * @returns {string} 前のマップID
+   */
   prev(id) {
     const idx = this.getIndex(id);
     if (idx === -1) return this._list[this._list.length - 1];
     return this.at(idx - 1);
   }
 
+  /** マップ数を取得 */
   count() { return this._list.length; }
 
+  /**
+   * マップのメタ情報行を生成（UI表示用）
+   * @param {string} id - マップID
+   * @returns {string[]} 情報行配列
+   */
   metaLines(id) {
     const m = this.get(id);
     if (!m) return [];

@@ -1,8 +1,14 @@
-// ============================================================
-// NEON ARENA - チート検証
-// ネットワークメッセージの検証、チート判定を行う
-// ============================================================
+/* ============================================================
+   NEON ARENA - チート検証
+   ネットワークメッセージの検証、チート判定を行う
+   ============================================================ */
 
+/**
+ * チート検証クラス
+ * ネットワーク経由で受信したパケットやプレイヤー行動を検証し、
+ * 不正な操作（速度改変・ワープ・連射・リプレイ攻撃など）を検出する
+ * 現在はローカル専用のため全検証をパスするスタブ実装
+ */
 class CheatValidator {
   constructor() {
     this.processedInputs = new Set();  // 処理済み入力ID（リプレイ攻撃防止）
@@ -29,7 +35,7 @@ class CheatValidator {
   }
 
   /**
-   * リプレイアタック検出
+   * リプレイアタック検出（同じ入力IDが再送されていないか）
    * @param {string} inputId - 入力ID
    * @returns {Object} 検出結果
    */
@@ -38,7 +44,7 @@ class CheatValidator {
   }
 
   /**
-   * 移動速度の妥当性検証
+   * 移動速度の妥当性検証（最大速度を超えていないか）
    * @param {THREE.Vector3} currentPos - 現在位置
    * @param {THREE.Vector3} lastPos - 前回位置
    * @param {number} dt - 経過時間
@@ -50,7 +56,7 @@ class CheatValidator {
   }
 
   /**
-   * ワープ（瞬間移動）検出
+   * ワープ（瞬間移動）検出（許容距離を超えた移動がないか）
    * @param {THREE.Vector3} currentPos - 現在位置
    * @param {THREE.Vector3} lastPos - 前回位置
    * @param {number} maxDist - 最大許容距離
@@ -74,7 +80,7 @@ class CheatValidator {
   }
 
   /**
-   * 武器の妥当性検証
+   * 武器の妥当性検証（所有している武器か）
    * @param {string} weapon - 武器ID
    * @returns {Object} 検証結果
    */
@@ -83,7 +89,7 @@ class CheatValidator {
   }
 
   /**
-   * 体力の妥当性検証
+   * 体力の妥当性検証（最大体力を超えていないか）
    * @param {string} peerId - プレイヤーID
    * @param {number} health - 報告された体力
    * @returns {Object} 検証結果
@@ -93,7 +99,7 @@ class CheatValidator {
   }
 
   /**
-   * 弾薬数の妥当性検証
+   * 弾薬数の妥当性検証（最大弾数を超えていないか）
    * @param {string} peerId - プレイヤーID
    * @param {string} weapon - 武器ID
    * @param {number} ammo - 報告された弾数
@@ -104,7 +110,7 @@ class CheatValidator {
   }
 
   /**
-   * スパムパケット検出
+   * スパムパケット検出（短時間に過剰なパケットを送信していないか）
    * @param {string} peerId - プレイヤーID
    * @returns {Object} 検出結果
    */
@@ -113,7 +119,7 @@ class CheatValidator {
   }
 
   /**
-   * シャドウ体力初期化
+   * シャドウ体力初期化（サーバ側で追跡するプレイヤー体力）
    * @param {string} peerId - プレイヤーID
    * @param {number} health - 初期体力
    */
@@ -121,7 +127,7 @@ class CheatValidator {
   }
 
   /**
-   * ダメージ追跡
+   * ダメージ追跡（サーバ側のシャドウ体力を減算）
    * @param {string} peerId - プレイヤーID
    * @param {number} damage - ダメージ量
    */
@@ -129,7 +135,7 @@ class CheatValidator {
   }
 
   /**
-   * 回復追跡
+   * 回復追跡（サーバ側のシャドウ体力を加算）
    * @param {string} peerId - プレイヤーID
    * @param {number} health - 現在体力
    */
@@ -137,7 +143,7 @@ class CheatValidator {
   }
 
   /**
-   * シャドウ体力検証
+   * シャドウ体力検証（報告値との整合性チェック）
    * @param {string} peerId - プレイヤーID
    * @param {number} reportedHealth - 報告体力
    * @returns {Object} 検証結果
@@ -147,7 +153,7 @@ class CheatValidator {
   }
 
   /**
-   * 位置記録
+   * 位置記録（移動履歴の保存）
    * @param {string} peerId - プレイヤーID
    * @param {THREE.Vector3} pos - 位置
    * @param {number} time - 時刻
@@ -156,7 +162,7 @@ class CheatValidator {
   }
 
   /**
-   * 最後の記録位置取得
+   * 最後の記録位置を取得
    * @param {string} peerId - プレイヤーID
    * @returns {THREE.Vector3|null} 最後の位置
    */
@@ -165,7 +171,7 @@ class CheatValidator {
   }
 
   /**
-   * 状態リセット
+   * 状態をリセット
    */
   reset() {
     this.processedInputs.clear();

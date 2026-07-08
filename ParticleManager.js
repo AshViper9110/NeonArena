@@ -1,3 +1,6 @@
+/* ============================================================
+   NEON ARENA - パーティクル管理
+   ============================================================ */
 const _pmV3 = new THREE.Vector3();
 const SPARK_GEO = new THREE.BoxGeometry(0.04, 0.04, 0.12);
 const PARTICLE_GEO = new THREE.SphereGeometry(0.1, 4, 4);

@@ -1,3 +1,13 @@
+/* ============================================================
+   NEON ARENA - 設定保存・読込
+   localStorageを使用した永続設定の管理
+   ============================================================ */
+
+/**
+ * 設定管理クラス
+ * ゲーム設定をlocalStorageに保存・読み込みする
+ * デフォルト定義・変更通知・一括更新をサポート
+ */
 class SettingsManager {
   static STORAGE_KEY = 'NeonArenaSettings';
 
@@ -48,10 +58,20 @@ class SettingsManager {
     this._load();
   }
 
+  /**
+   * 設定値を取得（未設定の場合はデフォルト値を返す）
+   * @param {string} key - 設定キー
+   * @returns {*} 設定値
+   */
   get(key) {
     return this._settings[key] !== undefined ? this._settings[key] : SettingsManager.DEFAULTS[key];
   }
 
+  /**
+   * 設定値を変更し、保存と通知を行う
+   * @param {string} key - 設定キー
+   * @param {*} value - 新しい値
+   */
   set(key, value) {
     const old = this._settings[key];
     if (old === value) return;
@@ -60,6 +80,10 @@ class SettingsManager {
     this._notify(key, value, old);
   }
 
+  /**
+   * 複数の設定を一括更新
+   * @param {Object} updates - キーと値のオブジェクト
+   */
   setMultiple(updates) {
     for (const [key, value] of Object.entries(updates)) {
       this._settings[key] = value;
@@ -70,6 +94,9 @@ class SettingsManager {
     }
   }
 
+  /**
+   * 全設定をデフォルトにリセット
+   */
   reset() {
     this._settings = {};
     this._save();
@@ -78,22 +105,43 @@ class SettingsManager {
     }
   }
 
+  /**
+   * 全ての設定値を取得（デフォルト値で未設定を補完）
+   * @returns {Object} 全設定
+   */
   getAll() {
     return { ...SettingsManager.DEFAULTS, ...this._settings };
   }
 
+  /**
+   * 設定変更のリスナーを登録
+   * @param {string} key - 監視する設定キー
+   * @param {Function} callback - 変更時コールバック
+   * @returns {Function} 登録解除用関数
+   */
   on(key, callback) {
     if (!this._listeners[key]) this._listeners[key] = [];
     this._listeners[key].push(callback);
     return () => this.off(key, callback);
   }
 
+  /**
+   * 設定変更のリスナーを削除
+   * @param {string} key - 設定キー
+   * @param {Function} callback - 削除するコールバック
+   */
   off(key, callback) {
     if (!this._listeners[key]) return;
     const idx = this._listeners[key].indexOf(callback);
     if (idx >= 0) this._listeners[key].splice(idx, 1);
   }
 
+  /**
+   * リスナーに変更を通知
+   * @param {string} key - 変更されたキー
+   * @param {*} value - 新しい値
+   * @param {*} old - 古い値
+   */
   _notify(key, value, old) {
     if (!this._listeners[key]) return;
     for (const cb of this._listeners[key]) {
@@ -101,6 +149,9 @@ class SettingsManager {
     }
   }
 
+  /**
+   * localStorageから設定を読み込み
+   */
   _load() {
     try {
       const raw = localStorage.getItem(SettingsManager.STORAGE_KEY);
@@ -115,6 +166,9 @@ class SettingsManager {
     }
   }
 
+  /**
+   * localStorageに設定を保存
+   */
   _save() {
     try {
       localStorage.setItem(SettingsManager.STORAGE_KEY, JSON.stringify(this._settings));

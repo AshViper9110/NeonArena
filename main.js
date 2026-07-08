@@ -1,16 +1,26 @@
+/* ============================================================
+   NEON ARENA - エントリポイント＆UIイベントハンドラ
+   グローバルな game インスタンス、タイトル/ロビー/設定UI
+   ============================================================ */
+
 const game = new Game();
 game.init();
 
+/* UI効果音再生のラッパー */
 function _uiSound(name) {
   return () => { if (AUDIO) AUDIO.play(name); };
 }
 
+/* 全ボタンにホバー音を割り当て */
 document.querySelectorAll('.btn, .ws-btn, .ms-btn').forEach(el => {
   el.addEventListener('mouseenter', _uiSound('ui_hover'));
 });
 
-/* ---- タイトル画面 ---- */
+/* ============================================================
+   タイトル画面イベント
+   ============================================================ */
 
+/* ホスト：ルーム作成 */
 document.getElementById('btn-host').addEventListener('click', async () => {
   const name = document.getElementById('player-name-input').value.trim() || 'Player';
   document.getElementById('title-status').textContent = '⏳ Creating room...';
@@ -39,17 +49,20 @@ document.getElementById('btn-host').addEventListener('click', async () => {
   }
 });
 
+/* 参加：ルームID入力画面を表示 */
 document.getElementById('btn-join').addEventListener('click', () => {
   document.getElementById('join-section').style.display = '';
   document.getElementById('host-section').style.display = 'none';
   document.getElementById('title-status').textContent = 'Enter the host\'s room ID';
 });
 
+/* 参加キャンセル */
 document.getElementById('btn-join-cancel').addEventListener('click', () => {
   document.getElementById('join-section').style.display = 'none';
   document.getElementById('title-status').textContent = 'Click Host or Join to start';
 });
 
+/* ルーム参加実行 */
 document.getElementById('btn-join-room').addEventListener('click', async () => {
   let roomId = document.getElementById('room-id-input').value.trim().toUpperCase();
   if (!roomId.startsWith('NEON-')) roomId = 'NEON-' + roomId;
@@ -64,6 +77,7 @@ document.getElementById('btn-join-room').addEventListener('click', async () => {
   }
 });
 
+/* プレイヤー名変更を即時同期 */
 document.getElementById('player-name-input').addEventListener('input', () => {
   const name = document.getElementById('player-name-input').value.trim() || 'Player';
   const me = game.players.get(game.localId);
@@ -74,14 +88,17 @@ document.getElementById('player-name-input').addEventListener('input', () => {
   }
 });
 
-/* ---- タイトル画面: Settings ---- */
+/* ---- 設定パネル ---- */
 document.getElementById('btn-title-settings').addEventListener('click', () => {
   _uiSound('ui_click')();
   document.getElementById('settings-panel').style.display = 'flex';
 });
 
-/* ---- ロビー ---- */
+/* ============================================================
+   ロビー画面（試合開始・準備・マップ・武器選択）
+   ============================================================ */
 
+/* ゲーム開始（ホストのみ） */
 document.getElementById('btn-start-game').addEventListener('click', () => {
   if (document.getElementById('btn-start-game').disabled) return;
   _uiSound('ui_start')();
@@ -90,6 +107,7 @@ document.getElementById('btn-start-game').addEventListener('click', () => {
   game.setState(GameState.COUNTDOWN);
 });
 
+/* 準備完了/キャンセル */
 document.getElementById('btn-ready').addEventListener('click', () => {
   const btn = document.getElementById('btn-ready');
   const isReady = btn.dataset.ready !== 'true';
@@ -102,6 +120,7 @@ document.getElementById('btn-ready').addEventListener('click', () => {
   game._updateLobbyUI();
 });
 
+/* 武器選択ナビゲーションのセットアップ */
 function setupWeaponNav(containerId) {
   const container = document.getElementById(containerId);
   if (!container) return;
@@ -115,6 +134,7 @@ function setupWeaponNav(containerId) {
 setupWeaponNav('lobby-weapon-selector');
 setupWeaponNav('death-weapon-selector');
 
+/* パッシブ選択ナビゲーションのセットアップ */
 function setupPassiveNav(containerId) {
   const container = document.getElementById(containerId);
   if (!container) return;
@@ -128,6 +148,7 @@ function setupPassiveNav(containerId) {
 setupPassiveNav('lobby-passive-selector');
 setupPassiveNav('death-passive-selector');
 
+/* リスポーンボタン */
 document.getElementById('respawn-btn').addEventListener('click', () => {
   if (game.respawnReady && !game.respawnRequested) {
     _uiSound('ui_click')();
@@ -135,6 +156,7 @@ document.getElementById('respawn-btn').addEventListener('click', () => {
   }
 });
 
+/* マップ選択前/次（ホストのみ） */
 document.getElementById('map-prev').addEventListener('click', () => {
   if (game.network.isHost) game._changeMap('prev');
 });
@@ -142,6 +164,7 @@ document.getElementById('map-next').addEventListener('click', () => {
   if (game.network.isHost) game._changeMap('next');
 });
 
+/* ルームIDコピー（タイトル画面） */
 document.getElementById('btn-copy-room').addEventListener('click', () => {
   _uiSound('ui_copy')();
   const text = document.getElementById('room-id-display').textContent;
@@ -149,6 +172,7 @@ document.getElementById('btn-copy-room').addEventListener('click', () => {
   document.getElementById('title-status').textContent = '✅ Copied!';
 });
 
+/* ルームIDコピー（ロビー画面） */
 document.getElementById('lobby-copy-room').addEventListener('click', () => {
   _uiSound('ui_copy')();
   const text = document.getElementById('lobby-room-id').textContent;
@@ -159,7 +183,9 @@ document.getElementById('lobby-copy-room').addEventListener('click', () => {
   setTimeout(() => { fb.style.display = 'none'; }, 2000);
 });
 
-/* ---- トレーニング ---- */
+/* ============================================================
+   トレーニングモード
+   ============================================================ */
 
 document.getElementById('btn-training').addEventListener('click', () => {
   _uiSound('ui_click')();
@@ -172,6 +198,7 @@ document.getElementById('btn-training').addEventListener('click', () => {
   game.setState(GameState.TRAINING);
 });
 
+/* ロビー退出 → タイトル画面へ */
 document.getElementById('btn-leave-lobby').addEventListener('click', () => {
   game.network.close();
   game.connectionHandled = false;
@@ -189,7 +216,9 @@ document.getElementById('btn-leave-lobby').addEventListener('click', () => {
   game.setState(GameState.TITLE);
 });
 
-/* ---- Settings Panel ---- */
+/* ============================================================
+   設定パネル（全設定項目のUI同期・反映）
+   ============================================================ */
 
 const settingsPanel = document.getElementById('settings-panel');
 const settingsInner = document.getElementById('settings-inner');
@@ -203,6 +232,7 @@ function openSettings() {
   _syncSettingsUI();
 }
 
+/* 設定パネルを閉じてタイトル画面の操作を復帰 */
 function closeSettings() {
   settingsPanel.style.display = 'none';
   const titleScreen = document.getElementById('title-screen');
@@ -210,9 +240,11 @@ function closeSettings() {
   _uiSound('ui_click')();
 }
 
+/* 設定データをUIコントロールに同期 */
 function _syncSettingsUI() {
   const all = SETTINGS.getAll();
-  document.querySelectorAll('[data-key]').forEach(el => {
+/* 設定要素の変更イベント → 設定保存＋反映 */
+document.querySelectorAll('[data-key]').forEach(el => {
     const key = el.dataset.key;
     const val = all[key];
     if (el.type === 'checkbox') {
@@ -268,6 +300,7 @@ document.querySelectorAll('[data-key]').forEach(el => {
   });
 });
 
+/* 個別設定値を即座にゲーム状態に反映 */
 function _applySetting(key, val) {
   switch (key) {
     case 'masterVolume':
@@ -357,7 +390,7 @@ function _applySetting(key, val) {
   }
 }
 
-/* ---- Settings: Tab switching ---- */
+/* ---- 設定タブ切り替え ---- */
 document.querySelectorAll('.settings-tab').forEach(tab => {
   tab.addEventListener('click', () => {
     document.querySelectorAll('.settings-tab').forEach(t => t.classList.remove('active'));
@@ -368,8 +401,10 @@ document.querySelectorAll('.settings-tab').forEach(tab => {
   });
 });
 
+/* 設定パネルを閉じる */
 document.getElementById('btn-settings-close').addEventListener('click', closeSettings);
 
+/* 設定をデフォルトにリセット */
 document.getElementById('btn-settings-reset').addEventListener('click', () => {
   SETTINGS.reset();
   _syncSettingsUI();
@@ -379,6 +414,7 @@ document.getElementById('btn-settings-reset').addEventListener('click', () => {
   _uiSound('ui_click')();
 });
 
+/* Escapeキーで設定パネルを閉じる */
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && settingsPanel.style.display === 'flex') {
     closeSettings();
@@ -386,10 +422,10 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
-/* ---- Settings from lobby ---- */
+/* ---- ロビーから設定を開く ---- */
 document.getElementById('btn-settings').addEventListener('click', openSettings);
 
-/* ---- フルスクリーン ---- */
+/* ---- フルスクリーン切替 ---- */
 document.getElementById('btn-fullscreen').addEventListener('click', () => {
   if (!document.fullscreenElement) {
     document.documentElement.requestFullscreen().catch(() => {});
@@ -408,12 +444,14 @@ function _checkOrientation() {
   const isPortrait = window.innerHeight > window.innerWidth;
   overlay.style.display = isPortrait ? '' : 'none';
 }
+/* 画面向き変更検知 */
 window.addEventListener('resize', _checkOrientation);
 window.addEventListener('orientationchange', () => {
   setTimeout(_checkOrientation, 300);
 });
 _checkOrientation();
 
+/* モバイルデバイス判定（画面サイズ＋UA） */
 var _isMobileDevice = /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
   || (navigator.maxTouchPoints > 0 && window.innerWidth < 1024);
 
@@ -423,15 +461,18 @@ if (_isMobileDevice) {
 
 /* =============================================================
    モバイルボタンレイアウトエディタ
+   タッチ操作のFire/Dash/Reloadボタンの位置・サイズ・透明度を編集
    ============================================================= */
 var _layoutEditMode = false;
 var _layoutDragData = null;
 var _layoutDragHandlers = {};
 
+/* モバイルかどうか（画面サイズ＋ゲーム内検出） */
 function _isMobile() {
   return _isMobileDevice || (game.input && game.input.isMobile);
 }
 
+/* 設定からレイアウトを読み込み（デフォルト値をフォールバック） */
 function _getLayoutFromSettings() {
   const saved = SETTINGS.get('mobileButtonLayout');
   const def = SettingsManager.DEFAULTS.mobileButtonLayout;
@@ -442,6 +483,7 @@ function _getLayoutFromSettings() {
   };
 }
 
+/* レイアウト設定をエディタのスライダーに反映 */
 function _applyLayoutToEditor(layout) {
   ['fire', 'dash', 'reload'].forEach(action => {
     const cfg = layout[action];
@@ -457,6 +499,7 @@ function _applyLayoutToEditor(layout) {
   });
 }
 
+/* レイアウト編集：ドラッグ開始 */
 function _onLayoutDrag(e, action) {
   if (!_layoutEditMode) return;
   e.preventDefault();
@@ -479,6 +522,7 @@ function _onLayoutDrag(e, action) {
   }
 }
 
+/* レイアウト編集：ドラッグ中 */
 function _onLayoutMove(e) {
   if (!_layoutDragData) return;
   e.preventDefault();
@@ -500,6 +544,7 @@ function _onLayoutMove(e) {
   btn.style.bottom = '';
 }
 
+/* レイアウト編集：ドラッグ終了 */
 function _onLayoutDragEnd(e) {
   if (!_layoutDragData) return;
   const action = _layoutDragData.action;
@@ -510,6 +555,7 @@ function _onLayoutDragEnd(e) {
   else if (action === 'reload') console.log('[MobileUI] Reload button moved');
 }
 
+/* レイアウトエディタを開く */
 function _openLayoutEditor() {
   console.log('[LayoutEditor] Open');
   _layoutEditMode = true;
@@ -540,6 +586,7 @@ function _openLayoutEditor() {
   _bindLayoutDrag();
 }
 
+/* レイアウトエディタを閉じる */
 function _closeLayoutEditor() {
   _layoutEditMode = false;
   _layoutDragData = null;
@@ -552,6 +599,7 @@ function _closeLayoutEditor() {
   _unbindLayoutDrag();
 }
 
+/* ドラッグハンドラを各ボタンにバインド */
 function _bindLayoutDrag() {
   _unbindLayoutDrag();
   ['fire', 'dash', 'reload'].forEach(action => {
@@ -573,6 +621,7 @@ function _bindLayoutDrag() {
   }
 }
 
+/* ドラッグハンドラを解除 */
 function _unbindLayoutDrag() {
   ['fire', 'dash', 'reload'].forEach(action => {
     const btn = document.getElementById('touch-' + action);
@@ -587,6 +636,7 @@ function _unbindLayoutDrag() {
   });
 }
 
+/* レイアウトを設定に保存 */
 function _saveLayout() {
   const layout = _getLayoutFromSettings();
   ['fire', 'dash', 'reload'].forEach(action => {
@@ -615,6 +665,7 @@ function _saveLayout() {
   _closeLayoutEditor();
 }
 
+/* レイアウトをデフォルトにリセット */
 function _resetLayout() {
   const def = SettingsManager.DEFAULTS.mobileButtonLayout;
   SETTINGS.set('mobileButtonLayout', {
@@ -629,19 +680,19 @@ function _resetLayout() {
   console.log('[MobileUI] Layout reset');
 }
 
-/* ---- Layout edit button ---- */
+/* ---- レイアウト編集ボタン ---- */
 document.getElementById('btn-layout-edit').addEventListener('click', () => {
   console.log('[LayoutEditor] Button clicked');
   closeSettings();
   _openLayoutEditor();
 });
 
-/* ---- Layout editor save/reset/close ---- */
+/* ---- レイアウトエディタ保存/戻る ---- */
 document.getElementById('mle-confirm').addEventListener('click', _saveLayout);
 document.getElementById('mle-back').addEventListener('click', _closeLayoutEditor);
 
 
-/* ---- Reapply layout on resize for responsive positioning ---- */
+/* ---- リサイズ時にレイアウト再適用 ---- */
 window.addEventListener('resize', () => {
   if (_layoutEditMode) return;
   if (game.input && game.input.applyLayout) {
@@ -649,7 +700,7 @@ window.addEventListener('resize', () => {
   }
 });
 
-/* ---- Per-button size/opacity sliders ---- */
+/* ---- ボタンごとのサイズ/透明度スライダー ---- */
 document.querySelectorAll('.mle-slider').forEach(slider => {
   slider.addEventListener('input', () => {
     const btn = slider.dataset.btn;
@@ -667,11 +718,12 @@ document.querySelectorAll('.mle-slider').forEach(slider => {
   });
 });
 
+/* ページ離脱時にネットワーク切断 */
 window.addEventListener('beforeunload', () => {
   game.network.close();
 });
 
-/* ---- Apply settings on startup ---- */
+/* ---- 起動時に設定を適用 ---- */
 (function applyStartupSettings() {
   try {
     const all = SETTINGS.getAll();

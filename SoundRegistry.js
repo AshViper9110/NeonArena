@@ -1,3 +1,12 @@
+/* ============================================================
+   NEON ARENA - サウンドレジストリ（音響合成）
+   Web Audio API による全効果音のプロシージャル生成
+   発振器・ノイズ・フィルタのユーティリティと、
+   50種類以上の武器音・UI音・環境音の定義
+   ============================================================ */
+
+/* ---- 音響合成ユーティリティ ---- */
+
 function _osc(ctx, freq, type) {
   const o = ctx.createOscillator();
   o.type = type || 'sine';
@@ -99,7 +108,7 @@ const _oscNoise = (ctx, out, freq, type, dur, vol, now, noiseBuf, mix) => {
 };
 
 const SOUNDS = {
-  /* === UI === */
+  /* === UI ===  メニュー操作・通知音 */
   ui_hover: {
     category: 'ui', duration: 0.04,
     create: (ctx, out, p) => _tone(ctx, out, 800, 'sine', 0.04, 0.08 * p.volScale, p.now),
@@ -186,7 +195,7 @@ const SOUNDS = {
     },
   },
 
-  /* === Weapon: Pistols === */
+  /* === Weapon: Pistols ===  拳銃系 */
   pistol: {
     category: 'weapon', duration: 0.08,
     create: (ctx, out, p) => _oscNoise(ctx, out, 500, 'triangle', 0.08, 0.2 * p.volScale, p.now, p.noiseBuf, 0.2),
@@ -212,7 +221,7 @@ const SOUNDS = {
     create: (ctx, out, p) => _oscNoise(ctx, out, 600, 'triangle', 0.04, 0.13 * p.volScale, p.now, p.noiseBuf, 0.14),
   },
 
-  /* === Weapon: SMG === */
+  /* === Weapon: SMG ===  短機関銃系 */
   smg: {
     category: 'weapon', duration: 0.05,
     create: (ctx, out, p) => _oscNoise(ctx, out, 650, 'triangle', 0.05, 0.14 * p.volScale, p.now, p.noiseBuf, 0.2),
@@ -234,7 +243,7 @@ const SOUNDS = {
     create: (ctx, out, p) => _oscNoise(ctx, out, 550, 'triangle', 0.04, 0.14 * p.volScale, p.now, p.noiseBuf, 0.18),
   },
 
-  /* === Weapon: Assault Rifles === */
+  /* === Weapon: Assault Rifles ===  アサルトライフル系 */
   assault: {
     category: 'weapon', duration: 0.07,
     create: (ctx, out, p) => _oscNoise(ctx, out, 500, 'triangle', 0.07, 0.18 * p.volScale, p.now, p.noiseBuf, 0.25),
@@ -252,7 +261,7 @@ const SOUNDS = {
     create: (ctx, out, p) => _oscNoise(ctx, out, 480, 'triangle', 0.07, 0.18 * p.volScale, p.now, p.noiseBuf, 0.2),
   },
 
-  /* === Weapon: Battle Rifles === */
+  /* === Weapon: Battle Rifles ===  バトルライフル系 */
   battlerifle: {
     category: 'weapon', duration: 0.09,
     create: (ctx, out, p) => _oscNoise(ctx, out, 380, 'sawtooth', 0.09, 0.22 * p.volScale, p.now, p.noiseBuf, 0.3),
@@ -262,7 +271,7 @@ const SOUNDS = {
     create: (ctx, out, p) => _oscNoise(ctx, out, 420, 'triangle', 0.09, 0.2 * p.volScale, p.now, p.noiseBuf, 0.25),
   },
 
-  /* === Weapon: DMR === */
+  /* === Weapon: DMR ===  マークスマンライフル系 */
   dmr: {
     category: 'weapon', duration: 0.08,
     create: (ctx, out, p) => {
@@ -289,7 +298,7 @@ const SOUNDS = {
     create: (ctx, out, p) => _oscNoise(ctx, out, 600, 'triangle', 0.06, 0.15 * p.volScale, p.now, p.noiseBuf, 0.18),
   },
 
-  /* === Weapon: Shotguns === */
+  /* === Weapon: Shotguns ===  ショットガン系 */
   shotgun: {
     category: 'weapon', duration: 0.18,
     create: (ctx, out, p) => {
@@ -353,7 +362,7 @@ const SOUNDS = {
     create: (ctx, out, p) => _oscNoise(ctx, out, 300, 'sawtooth', 0.12, 0.22 * p.volScale, p.now, p.noiseBuf, 0.3),
   },
 
-  /* === Weapon: LMG === */
+  /* === Weapon: LMG ===  軽機関銃系 */
   lmg: {
     category: 'weapon', duration: 0.06,
     create: (ctx, out, p) => _oscNoise(ctx, out, 350, 'sawtooth', 0.06, 0.2 * p.volScale, p.now, p.noiseBuf, 0.3),
@@ -371,7 +380,7 @@ const SOUNDS = {
     create: (ctx, out, p) => _oscNoise(ctx, out, 400, 'triangle', 0.05, 0.16 * p.volScale, p.now, p.noiseBuf, 0.2),
   },
 
-  /* === Weapon: Snipers === */
+  /* === Weapon: Snipers ===  スナイパーライフル系 */
   sniper: {
     category: 'weapon', duration: 0.12,
     create: (ctx, out, p) => {
@@ -443,7 +452,7 @@ const SOUNDS = {
     },
   },
 
-  /* === Weapon: Launchers === */
+  /* === Weapon: Launchers ===  グレネード/ロケットランチャー系 */
   rpg: {
     category: 'weapon', duration: 0.35,
     create: (ctx, out, p) => {
@@ -496,7 +505,7 @@ const SOUNDS = {
     },
   },
 
-  /* === Weapon: Explosive (additional) === */
+  /* === Weapon: Explosive (additional) ===  追加爆発物 */
   sticky_launcher: {
     category: 'weapon', duration: 0.18,
     create: (ctx, out, p) => {
@@ -530,7 +539,7 @@ const SOUNDS = {
     },
   },
 
-  /* === Weapon: Energy === */
+  /* === Weapon: Energy ===  エネルギー武器①（レーザー・プラズマ） */
   laser_rifle: {
     category: 'weapon', duration: 0.1,
     create: (ctx, out, p) => {
@@ -603,7 +612,7 @@ const SOUNDS = {
     },
   },
 
-  /* === Beam Hums (loop while firing) === */
+  /* === Beam Hums (loop while firing) ===  ビーム持続音 */
   laser_rifle_hum: {
     category: 'weapon', duration: 0.05,
     create: (ctx, out, p) => {
@@ -640,7 +649,7 @@ const SOUNDS = {
     },
   },
 
-  /* === Weapon: Energy === */
+  /* === Weapon: Energy ===  エネルギー武器②（プラズマ系統） */
   plasma_smg: {
     category: 'weapon', duration: 0.04,
     create: (ctx, out, p) => _oscNoise(ctx, out, 750, 'triangle', 0.04, 0.14 * p.volScale, p.now, p.noiseBuf, 0.12),
@@ -681,7 +690,7 @@ const SOUNDS = {
     create: (ctx, out, p) => _oscNoise(ctx, out, 700, 'triangle', 0.05, 0.14 * p.volScale, p.now, p.noiseBuf, 0.14),
   },
 
-  /* === Weapon: Special / Summon === */
+  /* === Weapon: Special / Summon ===  特殊武器・召喚系 */
   black_hole_launcher: {
     category: 'weapon', duration: 0.3,
     create: (ctx, out, p) => {
@@ -715,7 +724,7 @@ const SOUNDS = {
     },
   },
 
-  /* === Explosions === */
+  /* === Explosions ===  爆発音 */
   explosion: {
     category: 'explosion', duration: 0.6,
     create: (ctx, out, p) => {
@@ -737,7 +746,7 @@ const SOUNDS = {
     },
   },
 
-  /* === Hits === */
+  /* === Hits ===  命中・被弾音 */
   hit: {
     category: 'player', duration: 0.06,
     create: (ctx, out, p) => {
@@ -793,7 +802,7 @@ const SOUNDS = {
     },
   },
 
-  /* === Player === */
+  /* === Player ===  プレイヤー関連効果音 */
   player_jump: {
     category: 'player', duration: 0.15,
     create: (ctx, out, p) => {
@@ -904,7 +913,7 @@ const SOUNDS = {
     },
   },
 
-  /* === Game === */
+  /* === Game ===  試合開始・終了・状態通知 */
   game_countdown: {
     category: 'voice', duration: 0.3,
     create: (ctx, out, p) => {

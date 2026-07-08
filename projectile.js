@@ -1,22 +1,23 @@
-// ============================================================
-// NEON ARENA - プロジェクタイル（弾丸）
-// 弾丸の生成、更新、軌跡、衝突後の処理を管理
-// ============================================================
+/* ============================================================
+   NEON ARENA - プロジェクタイル（弾丸）
+   弾丸の生成、更新、軌跡描画、寿命/範囲管理
+   ============================================================ */
 
+/* 共有ジオメトリ（インスタンス間でメモリ節約） */
 const _sharedProjGeo = new THREE.SphereGeometry(0.3, 6, 6);
 const _sharedProjGlowGeo = new THREE.SphereGeometry(0.6, 6, 6);
 const _v3_tmp = new THREE.Vector3();
 
 class Projectile {
   /**
-   * @param {THREE.Scene} scene - シーン
+   * @param {THREE.Scene} scene - Three.jsシーン
    * @param {THREE.Vector3} origin - 発射原点
    * @param {THREE.Vector3} dir - 発射方向（正規化済み）
-   * @param {string} ownerId - 所有者ID
-   * @param {string} id - 弾丸固有ID
-   * @param {number} color - 色
+   * @param {string} ownerId - 発射したプレイヤーのID
+   * @param {string|number} id - 弾丸固有ID
+   * @param {number} color - 色（16進数）
    * @param {string} weapon - 武器ID
-   * @param {number} mapHalf - マップ半分サイズ
+   * @param {number} mapHalf - マップの半分サイズ（境界判定用）
    */
   constructor(scene, origin, dir, ownerId, id, color, weapon, mapHalf) {
     this.scene = scene;
@@ -27,24 +28,28 @@ class Projectile {
     this.alive = true;
     this.age = 0;
     this.color = color || this.wp.color;
-    this.isHostProjectile = false;
-    this.isRemote = false;
+    this.isHostProjectile = false;   /* ホスト生成の弾か */
+    this.isRemote = false;           /* リモート通知由来か */
     this.mapHalf = mapHalf !== undefined ? mapHalf : 40;
 
+    /* メイン球体 */
     this.mat = new THREE.MeshBasicMaterial({ color: this.color });
     this.mesh = new THREE.Mesh(_sharedProjGeo, this.mat);
     this.mesh.position.copy(origin);
     this.mesh.position.y += CONFIG.playerHeight * 0.6;
     this.scene.add(this.mesh);
 
+    /* グロー（発光） */
     this.glowMat = new THREE.MeshBasicMaterial({ color: this.color, transparent: true, opacity: 0.25 });
     this.glow = new THREE.Mesh(_sharedProjGlowGeo, this.glowMat);
     this.glow.position.copy(this.mesh.position);
     this.scene.add(this.glow);
 
+    /* 速度ベクトル */
     this.velocity = dir.clone().multiplyScalar(this.wp.projSpeed || 50);
     this.velocity.y = 0;
 
+    /* 軌跡管理 */
     this.trail = [];
     this.trailTimer = 0;
     this.exploded = false;
@@ -63,37 +68,43 @@ class Projectile {
   }
 
   /**
-   * 弾丸更新
+   * 毎フレームの更新：移動・軌跡生成・有効範囲/寿命チェック
    * @param {number} dt - デルタタイム
    */
   update(dt) {
     if (!this.alive) return;
     this.age += dt;
 
+    /* 進行距離/寿命による消滅判定 */
     const speed = this.velocity.length();
     this._distTraveled += speed * dt;
     if (this._distTraveled >= this.maxDist) { this.destroy(); return; }
     if (this.age > this.maxAge) { this.destroy(); return; }
 
+    /* 位置更新 */
     this.mesh.position.x += this.velocity.x * dt;
     this.mesh.position.z += this.velocity.z * dt;
 
+    /* アリーナ境界チェック */
     const half = this.mapHalf;
     if (Math.abs(this.mesh.position.x) > half || Math.abs(this.mesh.position.z) > half) {
       this.destroy();
       return;
     }
 
+    /* グロー位置追従＋パルスアニメ */
     this.glow.position.copy(this.mesh.position);
     const pulse = 1 + 0.3 * Math.sin(this.age * 20);
     this.glow.scale.setScalar(pulse);
 
+    /* 軌跡（テール）生成 */
     this.trailTimer += dt;
     if (this.trailTimer > 0.03) {
       this.trailTimer = 0;
       this._spawnTrail();
     }
 
+    /* 軌跡のフェードアウト更新 */
     const trailLife = 0.2 + this.speed * 0.006;
     const trails = this.trail;
     for (let i = trails.length - 1; i >= 0; i--) {
@@ -111,6 +122,7 @@ class Projectile {
     }
   }
 
+  /* 軌跡エフェクト（小さな半透明球）を現在位置に追加 */
   _spawnTrail() {
     const r = this.wp.projRadius || 0.2;
     const trailSize = r * (0.5 + this.speed * 0.01);
@@ -126,6 +138,7 @@ class Projectile {
     this.trail.push({ mesh: m, life: 0, geo, mat });
   }
 
+  /* 爆発エフェクト：スケールアニメーション＋フェードアウト（requestAnimationFrame） */
   explosionFX() {
     if (this.exploded) return;
     this.exploded = true;
@@ -155,6 +168,7 @@ class Projectile {
     anim();
   }
 
+  /* 弾丸破棄：爆発エフェクト（該当武器のみ）＋メモリ解放 */
   destroy() {
     if (!this.alive) return;
     if (this.wp.explosive) this.explosionFX();
@@ -163,6 +177,7 @@ class Projectile {
     if (this.glow.parent) this.scene.remove(this.glow);
     this.mat.dispose();
     this.glowMat.dispose();
+    /* 軌跡メッシュもすべて破棄 */
     const trails = this.trail;
     for (let i = 0; i < trails.length; i++) {
       const t = trails[i];

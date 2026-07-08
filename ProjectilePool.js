@@ -1,17 +1,34 @@
+/* ============================================================
+   NEON ARENA - 弾丸オブジェクトプール
+   発射物（弾丸）の生成・再利用・管理
+   ============================================================ */
+
+/**
+ * 弾丸プールクラス
+ * 発射物のメッシュ・グロー・軌跡をプール管理する
+ * 最大サイズを超えた場合はリソースを完全解放
+ */
 class ProjectilePool {
   constructor(scene) {
     this.scene = scene;
-    this.pool = [];
-    this.active = [];
-    this.maxSize = 100;
+    this.pool = [];               // 未使用発射物
+    this.active = [];             // 使用中発射物
+    this.maxSize = 100;           // プール上限
     this._initGeos();
   }
 
+  /**
+   * 共有ジオメトリを初期化
+   */
   _initGeos() {
     this.sharedGeo = new THREE.SphereGeometry(0.3, 8, 8);
     this.sharedGlowGeo = new THREE.SphereGeometry(0.6, 8, 8);
   }
 
+  /**
+   * 新規発射物を生成
+   * @returns {Object} 発射物オブジェクト
+   */
   _createProjectile() {
     const mat = new THREE.MeshBasicMaterial({ color: 0xffffff });
     const mesh = new THREE.Mesh(this.sharedGeo, mat);
@@ -20,6 +37,10 @@ class ProjectilePool {
     return { mesh, glow, mat, glowMat, trail: [], trailTimer: 0 };
   }
 
+  /**
+   * 発射物を初期状態にリセット
+   * @param {Object} obj - 発射物オブジェクト
+   */
   _resetProjectile(obj) {
     if (obj.mesh.parent) obj.mesh.parent.remove(obj.mesh);
     if (obj.glow.parent) obj.glow.parent.remove(obj.glow);
@@ -32,6 +53,10 @@ class ProjectilePool {
     obj.trailTimer = 0;
   }
 
+  /**
+   * プールから発射物を取得
+   * @returns {Object} 発射物オブジェクト
+   */
   get() {
     let obj;
     if (this.pool.length > 0) {
@@ -44,6 +69,10 @@ class ProjectilePool {
     return obj;
   }
 
+  /**
+   * 発射物をプールに戻す
+   * @param {Object} obj - 解放する発射物
+   */
   release(obj) {
     const idx = this.active.indexOf(obj);
     if (idx >= 0) this.active.splice(idx, 1);
@@ -56,9 +85,11 @@ class ProjectilePool {
     }
   }
 
+  /** 全発射物を解放 */
   releaseAll() {
     [...this.active].forEach(obj => this.release(obj));
   }
 
+  /** アクティブな発射物数 */
   get activeCount() { return this.active.length; }
 }

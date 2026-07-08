@@ -1,3 +1,9 @@
+/* ============================================================
+   NEON ARENA - パッシブスキル定義
+   全パッシブの効果・修飾子(modifiers)を一元管理
+   各修飾子はPassiveManagerがジェネリックに解釈・適用
+   ============================================================ */
+
 const PASSIVES = Object.freeze({
   none: { id:"none", displayName:"None", description:"No passive skill", category:"Basic", icon:"⬜", rarity:"common", modifiers:{}, enabled:true },
 
@@ -56,8 +62,10 @@ const PASSIVES = Object.freeze({
   coolingSystem: { id:"coolingSystem", displayName:"Cooling System", description:"Beam fire interval -20%", category:"Beam", icon:"❄️", rarity:"uncommon", modifiers:{ beamCooldownMultiplier:0.8 }, enabled:true },
 });
 
+/* 全パッシブIDの配列 */
 const PASSIVE_IDS = Object.keys(PASSIVES);
 
+/* 日本語表示名・詳細説明・推奨/非推奨武器・評価 */
 const PASSIVE_DETAILS = {
   runner:{displayNameJa:"ランナー",categoryJa:"移動",descriptionJa:"移動速度が10%上昇する。シンプルかつ強力な移動系パッシブ。",effect:"移動速度+10%",synergyWeapons:["smg","compact_smg","carbine","shotgun"],antiSynergyWeapons:["heavy_sniper","minigun","beam_cannon"],recommendedPlaystyle:["積極的な機動戦","遊撃戦"],merits:["常時発動で効果が安定","どんな武器とも組み合わせやすい"],demerits:["効果が地味","速度上昇は慣れが必要"]},
   sprinter:{displayNameJa:"スプリンター",categoryJa:"移動",descriptionJa:"ダッシュ速度が15%上昇する。素早い接近・離脱が可能に。",effect:"ダッシュ速度+15%",synergyWeapons:["compact_smg","vector","shotgun"],antiSynergyWeapons:["heavy_sniper","lmg"],recommendedPlaystyle:["突撃","ヒットアンドアウェイ"],merits:["ダッシュが強化される","接近戦で有利"],demerits:["ダッシュ中以外は効果なし"]},

@@ -1,17 +1,35 @@
+/* ============================================================
+   NEON ARENA - 試合統計
+   キル/デス/アシストの記録、キルストリーク、試合結果集計
+   ============================================================ */
+
+/**
+ * 試合統計管理クラス
+ * 各プレイヤーのキル・デス・アシストを追跡し、
+ * キルストリーク名の判定や最終結果のソート・勝者判定を行う
+ */
 class MatchStatsManager {
   constructor(game) {
     this.game = game;
-    this.stats = new Map();
-    this.killStreaks = new Map();
-    this.killLog = [];
+    this.stats = new Map();          // プレイヤーID -> { kills, deaths, assists }
+    this.killStreaks = new Map();    // プレイヤーID -> 現在の連続キル数
+    this.killLog = [];               // 全キルイベントの時系列ログ
   }
 
+  /**
+   * 全ての統計データをリセット
+   */
   resetAll() {
     this.stats.clear();
     this.killStreaks.clear();
     this.killLog = [];
   }
 
+  /**
+   * プレイヤーの統計エントリを初期化（なければ作成）
+   * @param {string} id - プレイヤーID
+   * @returns {Object} 統計オブジェクト
+   */
   _ensure(id) {
     if (!this.stats.has(id)) {
       this.stats.set(id, { kills: 0, deaths: 0, assists: 0 });
@@ -19,6 +37,14 @@ class MatchStatsManager {
     return this.stats.get(id);
   }
 
+  /**
+   * キルイベントを登録
+   * キル・デス・ストリークを更新し、ゲーム側のplayerプロパティも同期
+   * @param {string} killerId - キルしたプレイヤーID
+   * @param {string} victimId - 倒されたプレイヤーID
+   * @param {string} weapon - 使用武器ID
+   * @returns {Object} ストリーク情報とプレイヤー名
+   */
   registerKill(killerId, victimId, weapon) {
     const killerStats = this._ensure(killerId);
     killerStats.kills++;
@@ -56,6 +82,10 @@ class MatchStatsManager {
     };
   }
 
+  /**
+   * 死亡イベントを登録（キルなしでの死亡用）
+   * @param {string} playerId - 死亡したプレイヤーID
+   */
   registerDeath(playerId) {
     const stats = this._ensure(playerId);
     stats.deaths++;
@@ -67,14 +97,28 @@ class MatchStatsManager {
     }
   }
 
+  /**
+   * プレイヤーの現在のキルストリークを取得
+   * @param {string} playerId - プレイヤーID
+   * @returns {number} 連続キル数
+   */
   getKillStreak(playerId) {
     return this.killStreaks.get(playerId) || 0;
   }
 
+  /**
+   * プレイヤーの統計を取得
+   * @param {string} playerId - プレイヤーID
+   * @returns {Object} 統計情報
+   */
   getStats(playerId) {
     return this._ensure(playerId);
   }
 
+  /**
+   * 試合結果を取得（キル数降順、同数の場合はK/D比順）
+   * @returns {Array} ソート済み結果配列
+   */
   getResults() {
     const results = [];
     this.game.players.forEach((p, id) => {
@@ -97,6 +141,11 @@ class MatchStatsManager {
     return results;
   }
 
+  /**
+   * 勝者を判定
+   * 最高キル数のプレイヤーがいればその情報を返す
+   * @returns {Object|null} 勝者情報（該当者なしはnull）
+   */
   getWinner() {
     const results = this.getResults();
     if (results.length === 0) return null;
@@ -106,6 +155,11 @@ class MatchStatsManager {
     return { winners, topKills };
   }
 
+  /**
+   * キルストリークの名称を取得
+   * @param {number} count - 連続キル数
+   * @returns {string|null} ストリーク名（該当なしはnull）
+   */
   getStreakName(count) {
     if (count >= 5) return 'PENTA KILL';
     if (count >= 4) return 'QUADRA KILL';

@@ -1,16 +1,30 @@
+/* ============================================================
+   NEON ARENA - Audio再生、カテゴリ別音量、空間オーディオ
+   サウンド管理：Web Audio APIを使用した効果音・BGMの再生制御
+   ============================================================ */
+
+/**
+ * オーディオ管理クラス
+ * Web Audio API を使用し、カテゴリ別音量制御・空間オーディオ（3D定位）・
+ * ビーム持続音管理などを提供する
+ */
 class AudioManager {
   constructor() {
-    this.ctx = null;
-    this.masterGain = null;
-    this.categories = {};
-    this._listenerPos = { x: 0, z: 0 };
+    this.ctx = null;                    // AudioContext
+    this.masterGain = null;             // マスターゲインノード
+    this.categories = {};               // カテゴリ別ゲインノード
+    this._listenerPos = { x: 0, z: 0 };// リスナー位置
     this._initialized = false;
-    this._noiseBuffer = null;
-    this._activeBeamHums = new Map();
+    this._noiseBuffer = null;           // ノイズバッファ（ビーム・効果音用）
+    this._activeBeamHums = new Map();   // アクティブなビーム持続音
     this._volume = { master: 1, ui: 0.7, weapon: 0.6, explosion: 0.8, player: 0.6, environment: 0.5, voice: 0.7, bgm: 0.7 };
-    this._savedVolume = null;
+    this._savedVolume = null;           // 一時保存音量（ミュート用）
   }
 
+  /**
+   * AudioContextを初期化
+   * マスターゲイン・カテゴリ別ゲイン・ノイズバッファを生成
+   */
   _init() {
     if (this._initialized) return;
     try {
@@ -26,6 +40,7 @@ class AudioManager {
         this.categories[cat] = gain;
       }
 
+      /* ホワイトノイズバッファを生成（ビーム・衝撃音用） */
       const bufSize = this.ctx.sampleRate;
       this._noiseBuffer = this.ctx.createBuffer(1, bufSize, this.ctx.sampleRate);
       const data = this._noiseBuffer.getChannelData(0);
@@ -38,6 +53,10 @@ class AudioManager {
     }
   }
 
+  /**
+   * ユーザー操作時にAudioContextを再開
+   * （ブラウザの自動再生ポリシー対策）
+   */
   _resumeOnInteraction() {
     const resume = () => {
       if (this.ctx && this.ctx.state === 'suspended') {
@@ -52,6 +71,11 @@ class AudioManager {
     document.addEventListener('touchstart', resume);
   }
 
+  /**
+   * カテゴリ別音量を設定
+   * @param {string} category - カテゴリ名
+   * @param {number} value - 音量（0〜1）
+   */
   setVolume(category, value) {
     this._volume[category] = value;
     if (this._initialized) {
@@ -63,10 +87,19 @@ class AudioManager {
     }
   }
 
+  /**
+   * カテゴリ別音量を取得
+   * @param {string} category - カテゴリ名
+   * @returns {number} 音量（0〜1）
+   */
   getVolume(category) {
     return this._volume[category] || 1;
   }
 
+  /**
+   * リスナー位置を更新（3Dオーディオ定位用）
+   * @param {THREE.Vector3} pos - 新しい位置
+   */
   updateListener(pos) {
     if (!this._initialized || !this.ctx.listener) return;
     this._listenerPos.x = pos.x;
@@ -78,6 +111,13 @@ class AudioManager {
     }
   }
 
+  /**
+   * 効果音を再生
+   * SoundRegistryの定義に基づき、3D定位・カテゴリ別音量を適用
+   * @param {string} id - サウンドID
+   * @param {Object} options - オプション（volume, position, category等）
+   * @returns {Object|null} 再生制御オブジェクト
+   */
   play(id, options = {}) {
     this._init();
     if (!this._initialized) return null;
@@ -133,12 +173,23 @@ class AudioManager {
     return null;
   }
 
+  /**
+   * 武器の発射音を再生
+   * @param {string} weaponId - 武器ID
+   * @param {Object} options - 再生オプション
+   * @returns {Object|null} 再生制御オブジェクト
+   */
   playWeapon(weaponId, options = {}) {
     const wp = WEAPONS[weaponId];
     const soundId = wp ? wp.sound : weaponId;
     return this.play(soundId, { ...options, category: 'weapon' });
   }
 
+  /**
+   * ビームの持続音を開始
+   * @param {string} weaponId - 武器ID
+   * @param {Object} options - オプション（position等）
+   */
   startBeamHum(weaponId, options = {}) {
     if (this._activeBeamHums.has(weaponId)) return;
     this._init();
@@ -172,6 +223,11 @@ class AudioManager {
     }
   }
 
+  /**
+   * ビーム持続音の位置を更新
+   * @param {string} weaponId - 武器ID
+   * @param {THREE.Vector3} pos - 新しい位置
+   */
   updateBeamHumPos(weaponId, pos) {
     const hum = this._activeBeamHums.get(weaponId);
     if (hum && hum.panner) {
@@ -180,6 +236,10 @@ class AudioManager {
     }
   }
 
+  /**
+   * ビーム持続音を停止
+   * @param {string} weaponId - 武器ID
+   */
   stopBeamHum(weaponId) {
     const hum = this._activeBeamHums.get(weaponId);
     if (hum) {
@@ -189,6 +249,9 @@ class AudioManager {
     }
   }
 
+  /**
+   * 全てのビーム持続音を停止
+   */
   stopAllBeamHums() {
     this._activeBeamHums.forEach((hum, id) => {
       if (hum.stop) hum.stop();
@@ -197,6 +260,10 @@ class AudioManager {
     this._activeBeamHums.clear();
   }
 
+  /**
+   * AudioManagerを破棄
+   * AudioContextを閉じてリソースを解放
+   */
   destroy() {
     this.stopAllBeamHums();
     if (this.ctx) {

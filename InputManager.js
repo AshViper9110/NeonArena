@@ -1,7 +1,12 @@
+/* ============================================================
+   NEON ARENA - キーボード・マウス・タッチ入力管理
+   入力を抽象化し Game の update から参照される形で利用
+   ============================================================ */
 class InputManager {
   constructor(game) {
     this.game = game;
 
+    /* === 入力値（Game.update が参照） === */
     this.moveX = 0;
     this.moveZ = 0;
     this.lookX = 0;
@@ -14,6 +19,7 @@ class InputManager {
     this.canFire = false;
     this.isMobile = this._detectMobile();
 
+    /* === 内部状態 === */
     this._keys = {};
     this._touchLookId = null;
     this._touchLookLastX = 0;
@@ -25,12 +31,14 @@ class InputManager {
     this._editingLayout = false;
   }
 
+  /* UA/画面サイズからモバイル端末を検出 */
   _detectMobile() {
     if (/Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) return true;
     if (navigator.maxTouchPoints > 0 && window.innerWidth < 1024) return true;
     return false;
   }
 
+  /* 入力管理の初期化：キーボード/マウス/ポインターロック/リサイズ/タッチ */
   init() {
     if (this._initialized) return;
     this._initialized = true;
@@ -48,6 +56,7 @@ class InputManager {
     }
   }
 
+  /* モバイルUIを再生成（ゲーム状態の変化後に呼ばれる） */
   ensureMobileUI() {
     this.isMobile = this._detectMobile();
     if (!this.isMobile) return false;
@@ -70,6 +79,7 @@ class InputManager {
     return true;
   }
 
+  /* レイアウトエディタ用にUIを生成 */
   ensureEditorUI() {
     this._cleanupTouchButtons();
     this._createTouchButtons();
@@ -78,6 +88,7 @@ class InputManager {
     console.log('[LayoutEditor] Mobile UI created');
   }
 
+  /* モバイルUIを破棄 */
   destroyMobileUI() {
     if (this._joystick) {
       this._joystick.destroy();
@@ -95,6 +106,7 @@ class InputManager {
     this._touchControlsCreated = false;
   }
 
+  /* タッチボタン要素をDOMから除去 */
   _cleanupTouchButtons() {
     const tc = document.getElementById('touch-controls');
     if (!tc) return;
@@ -103,6 +115,7 @@ class InputManager {
     this._touchButtonRefs = {};
   }
 
+  /* タッチコントロールの表示/非表示を強制 */
   _enforceTouchVisibility(visible) {
     const tc = document.getElementById('touch-controls');
     if (!tc) return;
@@ -129,6 +142,7 @@ class InputManager {
     }
   }
 
+  /* 移動入力をキーボード/ジョイスティックから集約 */
   updateMovement() {
     this.moveX = 0;
     this.moveZ = 0;
@@ -144,6 +158,7 @@ class InputManager {
       this.moveZ /= len;
     }
 
+    /* ジョイスティックがアクティブなら上書き */
     if (this._joystick && this._joystick._active && !this._editingLayout) {
       this.moveX = this._joystick.x;
       this.moveZ = -this._joystick.y;
@@ -151,6 +166,7 @@ class InputManager {
     }
   }
 
+  /* フレーム終了時のクリーンアップ（単発入力をリセット） */
   endFrame() {
     this.fireClicked = false;
     this.dashRequested = false;
@@ -160,6 +176,7 @@ class InputManager {
     this.lookY = 0;
   }
 
+  /* キーボードイベントのバインド */
   _setupKeyboard() {
     document.addEventListener('keydown', (e) => {
       const key = e.key.toLowerCase();
@@ -183,6 +200,7 @@ class InputManager {
     });
   }
 
+  /* マウスイベント（発射/照準）のバインド */
   _setupMouse() {
     this.game.renderer.domElement.addEventListener('mousedown', (e) => {
       if (e.button !== 0) return;
@@ -218,6 +236,7 @@ class InputManager {
     });
   }
 
+  /* ポインターロック状態変化の監視 */
   _setupPointerLock() {
     document.addEventListener('pointerlockchange', () => {
       this.game.pointerLocked = document.pointerLockElement === this.game.renderer.domElement;
@@ -228,6 +247,7 @@ class InputManager {
     });
   }
 
+  /* ウィンドウリサイズ → Three.js カメラ/レンダラー更新 */
   _setupResize() {
     window.addEventListener('resize', () => {
       if (this.game.camera) {
@@ -240,6 +260,7 @@ class InputManager {
     });
   }
 
+  /* タッチコントロール全体のセットアップ */
   _setupTouchControls() {
     this._cleanupTouchButtons();
     this._createJoystick();
@@ -256,6 +277,7 @@ class InputManager {
     }
   }
 
+  /* タッチスクロール/ジェスチャーを防止 */
   _preventScroll() {
     if (this._scrollPrevented) return;
     this._scrollPrevented = true;
@@ -268,6 +290,7 @@ class InputManager {
     document.addEventListener('gesturechange', (e) => e.preventDefault());
   }
 
+  /* バーチャルジョイスティックの生成とタッチ連動 */
   _createJoystick() {
     if (this._joystick) {
       this._joystick.destroy();
@@ -291,6 +314,7 @@ class InputManager {
     let joystickActive = false;
     let joystickPointerId = null;
 
+    /* 左半分のタッチでジョイスティック起動 */
     document.addEventListener('touchstart', (e) => {
       const tc = document.getElementById('touch-controls');
       if (!tc || window.getComputedStyle(tc).display === 'none') return;
@@ -331,6 +355,7 @@ class InputManager {
     }, { passive: true });
   }
 
+  /* タッチボタン（FIRE/DASH/RELOAD）の生成 */
   _createTouchButtons() {
     const container = document.getElementById('touch-controls');
     if (!container) return;
@@ -368,6 +393,7 @@ class InputManager {
     this.applyLayout();
   }
 
+  /* ボタン参照を再取得 */
   _refreshButtonRefs() {
     this._touchButtonRefs = {};
     ['fire', 'dash', 'reload'].forEach(action => {
@@ -376,6 +402,7 @@ class InputManager {
     });
   }
 
+  /* 設定のレイアウトデータをボタンに適用 */
   applyLayout() {
     const layout = SETTINGS.get('mobileButtonLayout');
     if (!layout) return;
@@ -402,6 +429,7 @@ class InputManager {
     });
   }
 
+  /* タッチボタンのアクション発火 */
   _handleTouchAction(action, active) {
     if (this._editingLayout) return;
     switch (action) {
@@ -429,6 +457,7 @@ class InputManager {
     }
   }
 
+  /* タッチによる視点操作（右半分ドラッグ） */
   _setupTouchLook() {
     if (this._touchLookBound) return;
     this._touchLookBound = true;
@@ -470,6 +499,7 @@ class InputManager {
     }, { passive: true });
   }
 
+  /* 全リソース解放 */
   destroy() {
     if (this._joystick) {
       this._joystick.destroy();
